@@ -1,0 +1,9 @@
+langchain
+langchain-core
+langchain-groq
+langgraph
+python-dotenv
+fastapi
+uvicorn
+langchain-huggingface
+sentence_transformers
