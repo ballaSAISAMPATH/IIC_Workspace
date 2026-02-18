@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, START, END
 from pydantic import BaseModel, Field
 from typing import List
 from encryption_template import encryption_prompt
+from FIR_generation_template import FIR_generation_prompt
 from dotenv import load_dotenv
 import os
 
@@ -30,14 +31,20 @@ class SectionExtraction(BaseModel):
     suggested_sections: List[str] = Field(
         description="Clearly applicable BNS sections"
     )
-    optional_sections: List[str] = Field(
-        description="Possibly applicable BNS sections"
+    accused_names: List[str] = Field(
+        description="List of accused names identified in the FIR"
     )
+    victim_names: List[str] = Field(
+            description="List of victim names identified in the FIR"
+      )     
+    
 
 encryption_model = model.with_structured_output(narration_encrypted_output_format)
+structured_llm = model.with_structured_output(SectionExtraction)
 
 def encrypt_narration(state: dict):
-      result = encryption_model.invoke(encryption_prompt.format_messages(text=state["fir_text"]))
+      message= encryption_prompt.format_messages(text=state["fir_text"])
+      result = encryption_model.invoke(message)
       print("encrypted_narration: ", result.encrypted_narration)
       print("\n\n\n\n")
       print("Mapping:", result.mapping)
@@ -49,24 +56,15 @@ def encrypt_narration(state: dict):
 
       result= encryption_model.invoke()
 def extract_sections(state: dict):
-    structured_llm = model.with_structured_output(SectionExtraction)
+      message = FIR_generation_prompt.format_messages(FIR_narration=state["encrypted_narration"])
+      result = structured_llm.invoke(message)
 
-    result = structured_llm.invoke(
-        f"""
-        Analyze the following FIR narration and identify applicable
-        sections under the Bharatiya Nyaya Sanhita (BNS), 2023.
-        Do not invent facts.
-
-        FIR Text:
-        {state['encrypted_narration']}
-        """
-    )
-
-    return {
-        "facts_summary": result.facts_summary,
-        "suggested_sections": result.suggested_sections,
-        "optional_sections": result.optional_sections
-    }
+      return {
+            "facts_summary": result.facts_summary,
+            "suggested_sections": result.suggested_sections,
+            "accused_names": result.accused_names,
+            "victim_names": result.victim_names
+      }
 
 graph = StateGraph(dict)
 graph.add_node("extract_sections", extract_sections)
@@ -92,4 +90,5 @@ output = compiled_graph.invoke({
 
 print("FACTS SUMMARY:", output["facts_summary"])
 print("SUGGESTED SECTIONS:", output["suggested_sections"])
-print("OPTIONAL SECTIONS:", output["optional_sections"])
+print("ACCUSED NAMES:", output["accused_names"])
+print("VICTIM NAMES:", output["victim_names"])
