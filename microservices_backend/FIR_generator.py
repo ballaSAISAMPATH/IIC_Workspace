@@ -77,11 +77,13 @@ graph.add_edge("extract_sections", END)
 compiled_graph = graph.compile()
 
 FIR_TEXT = """
-On 12th January 2025 at around 8:30 PM, the complainant Ramesh Kumar
-was returning home near MG Road, Bengaluru. The accused Rajesh and Mohan
-wrongfully restrained him and assaulted him using an iron rod, causing
-a fracture in his left arm. The accused also threatened him with dire
-consequences if he reported the matter to the police.
+On 3rd March 2025, the complainant Anil Verma, aged 28 years, resident of Kukatpally, Hyderabad, noticed that unknown persons had created a fake social media profile in his name on an online platform. Using that fake account, the accused sent messages to several contacts of the complainant, requesting money urgently and sharing a UPI QR code.
+
+Believing the messages to be genuine, two of the complainant’s friends transferred an amount of ₹45,000/- to the UPI account linked with the accused. On verification, it was found that the accused had unlawfully accessed digital identity details of the complainant and impersonated him online with an intention to cheat and cause wrongful loss.
+
+When the complainant tried to contact the accused through the platform, the account was deleted. The accused also threatened the complainant via anonymous emails stating that more fake accounts would be created if the matter was reported to the police.
+
+Hence, the complainant approached the police and requested necessary legal action against the unknown accused..
 """
 
 output = compiled_graph.invoke({
