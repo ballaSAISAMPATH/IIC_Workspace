@@ -1,32 +1,95 @@
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from pydantic import BaseModel, Field
+from typing import List
+from encryption_template import encryption_prompt
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-model =  ChatGroq(
-            model= "llama-3.1-8b-instant",
-            api_key=os.getenv("GROQ_API_KEY"),
-            temperature=0.7,
+
+model = ChatGroq(
+    model="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
+    temperature=0
+)
+
+class narration_encrypted_output_format(BaseModel):
+      encrypted_narration: str = Field(
+            description="The FIR narration with sensitive information replaced by placeholders"
+      )
+      mapping: dict = Field(
+            description="A dictionary mapping placeholders to original sensitive values"
       )
 
-class FirSchema(BaseModel):
-      topic : str = Field(description="The topic on which the description has to be written")
-      des : str =  Field(description="10 line about the topic and 5 questions on the description")
+class SectionExtraction(BaseModel):
+    facts_summary: str = Field(
+        description="Summary of offence-related facts"
+    )
+    suggested_sections: List[str] = Field(
+        description="Clearly applicable BNS sections"
+    )
+    optional_sections: List[str] = Field(
+        description="Possibly applicable BNS sections"
+    )
 
-def generate(state:FirSchema):
-      prompt = f"Write a 10 line description on {state.topic} and also write 5 questions on the description"
-      response = model.invoke(prompt)
-      state.des = response.content
-      return state
+encryption_model = model.with_structured_output(narration_encrypted_output_format)
 
-graph = StateGraph(FirSchema)
-graph.add_node("generate", generate)
-graph.add_edge(START, "generate")
-graph.add_edge("generate", END)
+def encrypt_narration(state: dict):
+      result = encryption_model.invoke(encryption_prompt.format_messages(text=state["fir_text"]))
+      print("encrypted_narration: ", result.encrypted_narration)
+      print("\n\n\n\n")
+      print("Mapping:", result.mapping)
+      print("\n\n\n\n")
+      return {
+            "encrypted_narration": result.encrypted_narration,
+            "mapping": result.mapping
+      }
+
+      result= encryption_model.invoke()
+def extract_sections(state: dict):
+    structured_llm = model.with_structured_output(SectionExtraction)
+
+    result = structured_llm.invoke(
+        f"""
+        Analyze the following FIR narration and identify applicable
+        sections under the Bharatiya Nyaya Sanhita (BNS), 2023.
+        Do not invent facts.
+
+        FIR Text:
+        {state['encrypted_narration']}
+        """
+    )
+
+    return {
+        "facts_summary": result.facts_summary,
+        "suggested_sections": result.suggested_sections,
+        "optional_sections": result.optional_sections
+    }
+
+graph = StateGraph(dict)
+graph.add_node("extract_sections", extract_sections)
+graph.add_node("encrypt_narration", encrypt_narration)
+
+graph.add_edge(START, "encrypt_narration")
+graph.add_edge("encrypt_narration", "extract_sections")
+graph.add_edge("extract_sections", END)
 
 compiled_graph = graph.compile()
-result = compiled_graph.invoke({"topic":"iron man", "des":""})
-print(result["des"])
+
+FIR_TEXT = """
+On 12th January 2025 at around 8:30 PM, the complainant Ramesh Kumar
+was returning home near MG Road, Bengaluru. The accused Rajesh and Mohan
+wrongfully restrained him and assaulted him using an iron rod, causing
+a fracture in his left arm. The accused also threatened him with dire
+consequences if he reported the matter to the police.
+"""
+
+output = compiled_graph.invoke({
+    "fir_text": FIR_TEXT
+})
+
+print("FACTS SUMMARY:", output["facts_summary"])
+print("SUGGESTED SECTIONS:", output["suggested_sections"])
+print("OPTIONAL SECTIONS:", output["optional_sections"])
