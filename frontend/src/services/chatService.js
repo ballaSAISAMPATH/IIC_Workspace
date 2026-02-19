@@ -27,38 +27,7 @@ class FIRChatBot {
         key: "complainantAddress",
         question: "Thank you. Could you please provide your complete address?",
       },
-      {
-        key: "complainantPhone",
-        question: "What is your phone number?",
-      },
-      {
-        key: "incidentDate",
-        question: "When did the incident happen? Please provide the date.",
-      },
-      {
-        key: "incidentTime",
-        question: "What time did the incident occur?",
-      },
-      {
-        key: "incidentLocation",
-        question: "Where did the incident take place? Please provide the full location.",
-      },
-      {
-        key: "incidentDescription",
-        question: "Please describe in detail what happened. Take your time.",
-      },
-      {
-        key: "accusedDescription",
-        question: "Can you describe the accused? If unknown, say 'unknown'.",
-      },
-      {
-        key: "witnessDetails",
-        question: "Were there any witnesses? If none, say 'none'.",
-      },
-      {
-        key: "evidenceDetails",
-        question: "Do you have any evidence? Photos, videos, documents? If none, say 'none'.",
-      },
+      
     ];
   }
 

@@ -19,15 +19,12 @@ export default function ReportSection({ report }) {
     if (!report || !ref.current) return;
 
     const ctx = gsap.context(() => {
-      // Card entrance
       gsap.fromTo(ref.current, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
 
-      // Stagger report sections
       gsap.from(".report-section-block", {
         y: 20, opacity: 0, stagger: 0.1, duration: 0.5, delay: 0.4, ease: "power2.out",
       });
 
-      // Stagger action buttons
       gsap.from(".action-btn", {
         y: 10, opacity: 0, stagger: 0.08, duration: 0.35, delay: 0.8, ease: "power2.out",
       });

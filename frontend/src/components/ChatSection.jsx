@@ -51,7 +51,20 @@ export default function ChatSection({ onFIRReady }) {
     }
   }, [isFocused]);
 
-  // Auto-start on scroll + entrance animation
+   const speakText = async (text) => {
+      setIsSpeaking(true);
+      await ttsService.speak(text, language);
+      setIsSpeaking(false);
+    };
+  const startConversation = async () => {
+    if (hasStarted) return;
+    setHasStarted(true);
+    chatBot.reset();
+    chatBot.setLanguage(language);
+    const greeting = chatBot.getGreeting();
+    setMessages([{ role: "assistant", content: greeting.message, id: Date.now() }]);
+    await speakText(greeting.message);
+  };
   useEffect(() => {
     const ctx = gsap.context(() => {
       // Section header entrance
@@ -66,7 +79,7 @@ export default function ChatSection({ onFIRReady }) {
         y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out",
       });
     }, sectionRef);
-
+    
     const trigger = ScrollTrigger.create({
       trigger: sectionRef.current,
       start: "top 60%",
@@ -74,7 +87,7 @@ export default function ChatSection({ onFIRReady }) {
       once: true,
     });
     return () => { trigger.kill(); ctx.revert(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   // Prevent page scroll when user scrolls inside chat
   useEffect(() => {
@@ -103,21 +116,8 @@ export default function ChatSection({ onFIRReady }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const startConversation = async () => {
-    if (hasStarted) return;
-    setHasStarted(true);
-    chatBot.reset();
-    chatBot.setLanguage(language);
-    const greeting = chatBot.getGreeting();
-    setMessages([{ role: "assistant", content: greeting.message, id: Date.now() }]);
-    await speakText(greeting.message);
-  };
-
-  const speakText = async (text) => {
-    setIsSpeaking(true);
-    await ttsService.speak(text, language);
-    setIsSpeaking(false);
-  };
+  
+   
 
   const stopSpeaking = () => { ttsService.stop(); setIsSpeaking(false); };
 
@@ -314,7 +314,6 @@ export default function ChatSection({ onFIRReady }) {
   );
 }
 
-/* ─── Sub-components ─── */
 
 function ChatBubble({ message, onSpeak }) {
   const ref = useRef(null);

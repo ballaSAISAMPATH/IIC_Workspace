@@ -25,41 +25,32 @@ export default function HeroSection() {
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 0.3 });
 
-      // Letters fly in
       tl.from(".fir-letter", {
         y: 70, opacity: 0, rotationX: -50, stagger: 0.18, duration: 1.1, ease: "back.out(1.3)",
       });
 
-      // Small tagline above title fades in
       tl.to(taglineRef.current, { opacity: 1, y: 0, duration: 0.5 }, "-=0.4");
 
-      // Expand into full words with a stagger cascade
       tl.to(fExpandRef.current, { width: "auto", opacity: 1, duration: 0.55, ease: "power2.inOut" }, "+=0.4");
       tl.to(iExpandRef.current, { width: "auto", opacity: 1, duration: 0.35, ease: "power2.inOut" }, "-=0.2");
       tl.to(rExpandRef.current, { width: "auto", opacity: 1, duration: 0.55, ease: "power2.inOut" }, "-=0.2");
 
-      // Subtitle
       tl.to(subtitleRef.current, { opacity: 1, y: 0, duration: 0.7 }, "-=0.15");
 
-      // Badges stagger in
       tl.to(badgesRef.current, { opacity: 1, y: 0, duration: 0.5 }, "-=0.3");
       tl.from(".hero-badge", { y: 8, opacity: 0, stagger: 0.08, duration: 0.35, ease: "power2.out" }, "-=0.3");
 
-      // Stats row
       tl.to(statsRef.current, { opacity: 1, y: 0, duration: 0.5 }, "-=0.15");
       tl.from(".hero-stat", { y: 10, opacity: 0, stagger: 0.1, duration: 0.35, ease: "power2.out" }, "-=0.3");
 
-      // Scroll indicator
       tl.to(scrollRef.current, { opacity: 1, duration: 0.6 }, "-=0.1");
 
-      // Floating orbs
       gsap.to(".hero-orb", {
         y: "random(-18, 18)", x: "random(-12, 12)",
         duration: "random(5, 8)", repeat: -1, yoyo: true,
         ease: "sine.inOut", stagger: { each: 1, from: "random" },
       });
 
-      // Parallax on mouse for orbs
       const handleMouse = (e) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 2;
         const y = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -84,7 +75,6 @@ export default function HeroSection() {
       <div className="hero-orb hero-orb-3" />
 
       <div className="hero-content">
-        {/* Small tagline above title */}
         <div ref={taglineRef} className="hero-tagline">
           Justice should have no barriers
         </div>
@@ -123,7 +113,6 @@ export default function HeroSection() {
           ))}
         </div>
 
-        {/* Stats row — social proof */}
         <div ref={statsRef} className="hero-stats">
           {[
             { value: "EN", label: "English" },
