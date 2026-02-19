@@ -1,96 +1,198 @@
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional, Dict, Any
+from dotenv import load_dotenv
+from datetime import datetime
+import uuid
+import os
+import json
+
 from encryption_template import encryption_prompt
 from FIR_generation_template import FIR_generation_prompt
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
-
 model = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="llama-3.3-70b-versatile",
     api_key=os.getenv("GROQ_API_KEY"),
     temperature=0
 )
 
-class narration_encrypted_output_format(BaseModel):
-      encrypted_narration: str = Field(
-            description="The FIR narration with sensitive information replaced by placeholders"
-      )
-      mapping: dict = Field(
-            description="A dictionary mapping placeholders to original sensitive values"
-      )
 
-class SectionExtraction(BaseModel):
-    facts_summary: str = Field(
-        description="Summary of offence-related facts"
-    )
-    suggested_sections: List[str] = Field(
-        description="Clearly applicable BNS sections"
-    )
-    accused_names: List[str] = Field(
-        description="List of accused names identified in the FIR"
-    )
-    victim_names: List[str] = Field(
-            description="List of victim names identified in the FIR"
-      )     
-    
+class LawSection(BaseModel):
+    act_name: Optional[str] = None
+    sections: List[str] = Field(default_factory=list)
 
-encryption_model = model.with_structured_output(narration_encrypted_output_format)
-structured_llm = model.with_structured_output(SectionExtraction)
+
+class NarrationEncrypted(BaseModel):
+    encrypted_narration: str
+    mapping: Dict[str, Any]
+
+
+class Accused(BaseModel):
+    name: Optional[str] = None
+    known_status: str = "unknown"
+    address: Optional[str] = None
+    description: Optional[str] = None
+
+
+class PropertyItem(BaseModel):
+    description: Optional[str] = None
+    quantity: Optional[str] = None
+    value: Optional[str] = None
+    identification_marks: Optional[str] = None
+
+
+class LLMFIRExtraction(BaseModel):
+    acts_and_sections: List[LawSection]
+    accused_list: List[Accused]
+    complainant_name: Optional[str]
+    complainant_address: Optional[str]
+    fir_contents: str
+    property_details: List[PropertyItem]
+    total_property_value: Optional[str]
+    delay_in_reporting_reason: Optional[str]
+
+
+class FIRFormIF1(BaseModel):
+    district: Optional[str]
+    police_station: Optional[str]
+    year: Optional[str]
+    fir_number: Optional[str]
+    fir_date: Optional[str]
+
+    acts_and_sections: List[LawSection] = Field(default_factory=list)
+    other_acts_and_sections: Optional[str] = None
+
+    information_received_date: Optional[str]
+    information_received_time: Optional[str]
+    general_diary_entry_numbers: Optional[str]
+    general_diary_time: Optional[str]
+
+    distance_and_direction_from_ps: Optional[str]
+
+    complainant_name: Optional[str]
+    complainant_address: Optional[str]
+
+    accused_list: List[Accused] = Field(default_factory=list)
+
+    property_details: List[PropertyItem] = Field(default_factory=list)
+    total_property_value: Optional[str]
+
+    delay_in_reporting_reason: Optional[str]
+
+    fir_contents: Optional[str]
+
+    action_taken_description: Optional[str]
+
+
+
+def get_current_datetime():
+    now = datetime.now()
+    return {
+        "date": now.strftime("%d-%m-%Y"),
+        "time": now.strftime("%H:%M:%S"),
+        "year": now.strftime("%Y")
+    }
+
+
+def generate_fir_number():
+    return f"FIR-{uuid.uuid4().hex[:8].upper()}"
+
+
+def get_device_location():
+    return {
+        "district": "Visakhapatnam",
+        "police_station": "Cyber Crime Police Station",
+        "distance_and_direction_from_ps": "2 KM North"
+    }
+
+
+
+encrypt_llm = model.with_structured_output(NarrationEncrypted)
+llm_extraction = model.with_structured_output(LLMFIRExtraction)
+
+
 
 def encrypt_narration(state: dict):
-      message= encryption_prompt.format_messages(text=state["fir_text"])
-      result = encryption_model.invoke(message)
-      print("encrypted_narration: ", result.encrypted_narration)
-      print("\n\n\n\n")
-      print("Mapping:", result.mapping)
-      print("\n\n\n\n")
-      return {
-            "encrypted_narration": result.encrypted_narration,
-            "mapping": result.mapping
-      }
+    msg = encryption_prompt.format_messages(
+        text=state["fir_text"]
+    )
+    result = encrypt_llm.invoke(msg)
+    return {
+        "encrypted_narration": result.encrypted_narration,
+        "mapping": result.mapping
+    }
 
-      result= encryption_model.invoke()
-def extract_sections(state: dict):
-      message = FIR_generation_prompt.format_messages(FIR_narration=state["encrypted_narration"])
-      result = structured_llm.invoke(message)
 
-      return {
-            "facts_summary": result.facts_summary,
-            "suggested_sections": result.suggested_sections,
-            "accused_names": result.accused_names,
-            "victim_names": result.victim_names
-      }
+def llm_extract_fields(state: dict):
+    msg = FIR_generation_prompt.format_messages(
+        FIR_narration=state["encrypted_narration"]
+    )
+    extracted = llm_extraction.invoke(msg)
+    return {
+        "llm_data": extracted,
+        "mapping": state["mapping"]
+    }
+
+
+def build_final_fir(state: dict):
+    dt = get_current_datetime()
+    loc = get_device_location()
+    llm = state["llm_data"]
+
+    fir = FIRFormIF1(
+        district=loc["district"],
+        police_station=loc["police_station"],
+        year=dt["year"],
+        fir_number=generate_fir_number(),
+
+        fir_date=dt["date"],
+        information_received_date=dt["date"],
+        information_received_time=dt["time"],
+        general_diary_entry_numbers="AUTO",
+        general_diary_time=dt["time"],
+        distance_and_direction_from_ps=loc["distance_and_direction_from_ps"],
+
+        acts_and_sections=llm.acts_and_sections,
+        accused_list=llm.accused_list,
+        complainant_name=llm.complainant_name,
+        complainant_address=llm.complainant_address,
+        fir_contents=llm.fir_contents,
+        property_details=llm.property_details,
+        total_property_value=llm.total_property_value,
+        delay_in_reporting_reason=llm.delay_in_reporting_reason,
+
+        action_taken_description="Case registered and investigation initiated."
+    )
+
+    return {"fir": fir}
+
+
 
 graph = StateGraph(dict)
-graph.add_node("extract_sections", extract_sections)
+
 graph.add_node("encrypt_narration", encrypt_narration)
+graph.add_node("llm_extract_fields", llm_extract_fields)
+graph.add_node("build_final_fir", build_final_fir)
 
 graph.add_edge(START, "encrypt_narration")
-graph.add_edge("encrypt_narration", "extract_sections")
-graph.add_edge("extract_sections", END)
+graph.add_edge("encrypt_narration", "llm_extract_fields")
+graph.add_edge("llm_extract_fields", "build_final_fir")
+graph.add_edge("build_final_fir", END)
 
 compiled_graph = graph.compile()
 
+
 FIR_TEXT = """
-On 3rd March 2025, the complainant Anil Verma, aged 28 years, resident of Kukatpally, Hyderabad, noticed that unknown persons had created a fake social media profile in his name on an online platform. Using that fake account, the accused sent messages to several contacts of the complainant, requesting money urgently and sharing a UPI QR code.
-
-Believing the messages to be genuine, two of the complainant’s friends transferred an amount of ₹45,000/- to the UPI account linked with the accused. On verification, it was found that the accused had unlawfully accessed digital identity details of the complainant and impersonated him online with an intention to cheat and cause wrongful loss.
-
-When the complainant tried to contact the accused through the platform, the account was deleted. The accused also threatened the complainant via anonymous emails stating that more fake accounts would be created if the matter was reported to the police.
-
-Hence, the complainant approached the police and requested necessary legal action against the unknown accused..
+On 15th April 2025, the complainant Rahul Mehta, aged 32 years,
+resident of Secunderabad, received multiple phone calls and WhatsApp
+messages from an unknown person claiming to be a bank officer.
+The accused obtained debit card details and OTP and transferred
+₹1,20,000/- online. The accused threatened false cases if reported.
 """
 
-output = compiled_graph.invoke({
-    "fir_text": FIR_TEXT
-})
+output = compiled_graph.invoke({"fir_text": FIR_TEXT})
 
-print("FACTS SUMMARY:", output["facts_summary"])
-print("SUGGESTED SECTIONS:", output["suggested_sections"])
-print("ACCUSED NAMES:", output["accused_names"])
-print("VICTIM NAMES:", output["victim_names"])
+print(json.dumps(output["fir"].model_dump(), indent=2))
