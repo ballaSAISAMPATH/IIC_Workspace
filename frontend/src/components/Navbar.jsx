@@ -21,7 +21,6 @@ export default function Navbar() {
       for (const section of sections) {
         if (section.getBoundingClientRect().top <= 200) current = section.id;
       }
-      // If scrolled to the very bottom, force "About" active
       if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 50) {
         current = "footer";
       }

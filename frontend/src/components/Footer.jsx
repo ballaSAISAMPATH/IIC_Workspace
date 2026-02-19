@@ -32,7 +32,7 @@ export default function Footer() {
               or language. Built with the belief that justice should have no barriers.
             </p>
             <p className="footer-about-langs">
-              Supports Telugu, Hindi, Tamil, Kannada, and English.
+              Supports Telugu and English.
             </p>
           </div>
 
