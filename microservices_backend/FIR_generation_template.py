@@ -34,6 +34,13 @@ FIR_generation_prompt = ChatPromptTemplate.from_messages([
         "- Do NOT explain your reasoning.\n"
         "- Do NOT invent facts or sections."
 
+
+       " TASKS:"
+"- Extract all possible FIR fields from the narration"
+"- Populate the FIRFormIF1 structure"
+"- If a field is not present in the narration, set it to null or a default value"
+"- Do NOT invent FIR numbers, GD entries, officer details, or court dispatch details"
+
     ),
     (
         "human",
