@@ -1,4 +1,3 @@
-// Speech-to-Text using Web Speech API (free, works in Chrome/Edge, supports Telugu)
 
 export class SpeechToTextService {
   constructor() {
@@ -9,7 +8,7 @@ export class SpeechToTextService {
     this.onError = null;
     this.onEnd = null;
     this.onStart = null;
-    this.language = "en-US"; // Default English
+    this.language = "en-US"; 
     this._restarting = false;
   }
 
@@ -23,7 +22,6 @@ export class SpeechToTextService {
       return false;
     }
 
-    // Destroy old instance if any
     if (this.recognition) {
       try { this.recognition.abort(); } catch (_e) { /* ignore */ }
       this.recognition = null;
@@ -31,7 +29,7 @@ export class SpeechToTextService {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = false; // single utterance — more reliable
+    this.recognition.continuous = false; 
     this.recognition.interimResults = true;
     this.recognition.maxAlternatives = 1;
     this.language = language || this.language;
@@ -58,7 +56,6 @@ export class SpeechToTextService {
     };
 
     this.recognition.onerror = (event) => {
-      // "no-speech" and "aborted" are not real errors for UX
       if (event.error === "no-speech" || event.error === "aborted") {
         this.isListening = false;
         if (this.onEnd) this.onEnd();
@@ -78,7 +75,6 @@ export class SpeechToTextService {
   }
 
   start() {
-    // Always create a fresh instance — avoids "already started" bugs
     this.init(this.language);
     if (!this.recognition) return false;
     try {
@@ -107,21 +103,20 @@ export class SpeechToTextService {
   }
 }
 
-// Text-to-Speech — more natural settings
 export class TextToSpeechService {
   constructor() {
     this.synth = window.speechSynthesis;
     this.currentUtterance = null;
-    this.language = "en-US"; // Default English
-    this.rate = 0.92; // Slightly slower = more natural
+    this.language = "en-US"; 
+    this.rate = 0.92; 
     this.pitch = 1.05;
     this.isSpeaking = false;
     this._voicesLoaded = false;
 
-    // Pre-load voices (Chrome loads them async)
+    
     if (this.synth) {
       this.synth.onvoiceschanged = () => { this._voicesLoaded = true; };
-      this.synth.getVoices(); // trigger load
+      this.synth.getVoices();
     }
   }
 
@@ -135,13 +130,10 @@ export class TextToSpeechService {
 
   getBestVoice(lang) {
     const voices = this.getVoices();
-    // Prefer Google / natural voices
     const preferred = voices.filter(v => v.lang === lang);
     const google = preferred.find(v => v.name.toLowerCase().includes("google"));
     if (google) return google;
-    // Fallback: any voice that matches lang
     if (preferred.length) return preferred[0];
-    // Partial match
     const prefix = lang.split("-")[0];
     const partial = voices.find(v => v.lang.startsWith(prefix));
     return partial || null;
@@ -168,7 +160,6 @@ export class TextToSpeechService {
       this.currentUtterance = utterance;
       this.isSpeaking = true;
 
-      // Chrome bug: synth sometimes pauses forever — workaround
       const resumeInterval = setInterval(() => {
         if (!this.synth.speaking) { clearInterval(resumeInterval); return; }
         this.synth.pause();
