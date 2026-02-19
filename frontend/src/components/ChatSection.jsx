@@ -180,7 +180,7 @@ export default function ChatSection({ onFIRReady }) {
       <div className="section-divider" />
       <div className="chat-inner">
         <div className="section-header">
-          <span className="section-badge chat-header-anim">File Your FIR</span>
+          <span className="section-badge chat-header-anim ">File Your FIR</span>
           <h2 className="section-title chat-header-anim">Tell us what happened</h2>
           <p className="section-desc chat-header-anim">
             Use the microphone to speak or type your responses below. The assistant will guide you.

@@ -1,8 +1,5 @@
-/* ═══════════════════════════════════════════
-   FIR — File It Responsibly · Pure CSS
-   ═══════════════════════════════════════════ */
+@import "tailwindcss";
 
-/* ─── Custom Properties ─── */
 :root {
   --c-bg: #07070e;
   --c-surface: #0d0d1a;

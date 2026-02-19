@@ -53,6 +53,7 @@ class LLMFIRExtraction(BaseModel):
     property_details: List[PropertyItem]
     total_property_value: Optional[str]
     delay_in_reporting_reason: Optional[str]
+    action_taken_description: Optional[str]
 
 
 class FIRFormIF1(BaseModel):
@@ -164,7 +165,7 @@ def build_final_fir(state: dict):
         total_property_value=llm.total_property_value,
         delay_in_reporting_reason=llm.delay_in_reporting_reason,
 
-        action_taken_description="Case registered and investigation initiated."
+        action_taken_description=llm.action_taken_description
     )
 
     return {"fir": fir}

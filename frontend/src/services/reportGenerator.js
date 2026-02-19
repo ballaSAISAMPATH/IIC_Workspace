@@ -1,8 +1,5 @@
 import { FIR_SECTION_LABELS } from "../config/constants";
 
-/**
- * Generate FIR report as formatted text
- */
 export function generateFIRText(report) {
   const divider = "═".repeat(60);
   const thinDivider = "─".repeat(60);
@@ -45,9 +42,6 @@ export function generateFIRText(report) {
   return text;
 }
 
-/**
- * Download FIR as .txt file
- */
 export function downloadAsTxt(report) {
   const text = generateFIRText(report);
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -61,9 +55,7 @@ export function downloadAsTxt(report) {
   URL.revokeObjectURL(url);
 }
 
-/**
- * Download FIR as .html (styled, printable, acts as DOCX alternative)
- */
+
 export function downloadAsDocx(report) {
   const html = `
 <!DOCTYPE html>
@@ -209,9 +201,7 @@ export function printFIR(report) {
   };
 }
 
-/**
- * Download as PDF (uses browser print-to-PDF)
- */
+
 export function downloadAsPDF(report) {
   // We use the same print mechanism — user selects "Save as PDF" from print dialog
   printFIR(report);
