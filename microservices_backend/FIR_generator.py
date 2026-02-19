@@ -186,14 +186,14 @@ graph.add_edge("build_final_fir", END)
 compiled_graph = graph.compile()
 
 
-FIR_TEXT = """
-On 15th April 2025, the complainant Rahul Mehta, aged 32 years,
-resident of Secunderabad, received multiple phone calls and WhatsApp
-messages from an unknown person claiming to be a bank officer.
-The accused obtained debit card details and OTP and transferred
-₹1,20,000/- online. The accused threatened false cases if reported.
-"""
+# FIR_TEXT = """
+# On 15th April 2025, the complainant Rahul Mehta, aged 32 years,
+# resident of Secunderabad, received multiple phone calls and WhatsApp
+# messages from an unknown person claiming to be a bank officer.
+# The accused obtained debit card details and OTP and transferred
+# ₹1,20,000/- online. The accused threatened false cases if reported.
+# """
 
-output = compiled_graph.invoke({"fir_text": FIR_TEXT})
+# output = compiled_graph.invoke({"fir_text": FIR_TEXT})
 
-print(json.dumps(output["fir"].model_dump(), indent=2))
+# print(json.dumps(output["fir"].model_dump(), indent=2))
