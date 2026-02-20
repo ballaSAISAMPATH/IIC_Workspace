@@ -1,12 +1,7 @@
-// src/services/reportGenerator.js
-// PDF download generates the official FORM IF1 PDF from scratch using pdf-lib
 
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-/* ── helpers ── */
 
-/** Word-wrap text to fit within maxWidth, returns array of strings.
- *  Handles newlines (\n) and strips control chars that WinAnsi can't encode. */
 function wrapText(font, text, fontSize, maxWidth) {
   if (!text) return [];
   // Strip control characters except newline, then split on newlines first
@@ -32,10 +27,7 @@ function wrapText(font, text, fontSize, maxWidth) {
   return lines;
 }
 
-/**
- * Draw a labelled field: "Label: value"
- * Returns the new Y position after drawing.
- */
+
 function drawField(page, fonts, label, value, x, y, opts = {}) {
   const { fontSize = 9, labelWidth = 160, maxWidth = 470, indent = 0 } = opts;
   const lineHeight = fontSize + 4;
@@ -79,10 +71,7 @@ function drawWrappedBlock(page, font, text, x, y, maxWidth, fontSize = 9) {
   return y - lines.length * lineHeight;
 }
 
-/**
- * Builds the FIR PDF from scratch and returns the raw bytes.
- * Shared by downloadAsPDF and printFIR.
- */
+
 async function buildFIRPdf(report) {
   const v = (x) => x || "—";
   const pdfDoc = await PDFDocument.create();
@@ -90,8 +79,8 @@ async function buildFIRPdf(report) {
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fonts = { regular, bold };
 
-  const W = 595.28;   // A4 width
-  const H = 841.89;   // A4 height
+  const W = 595.28;   
+  const H = 841.89;   
   const margin = 50;
   const contentW = W - margin * 2;
 
@@ -152,9 +141,9 @@ async function buildFIRPdf(report) {
   // ── Item 3 — Occurrence ──
   ensureSpace(80);
   y = drawSectionHeading(page, fonts, "3. Occurrence of Offence:", margin, y, 10);
-  y = drawWrappedBlock(page, regular, `(a) Day: ${v(report.occurrenceDay)}   Date: ${v(report.occurrenceDate)}   Time: ${v(report.occurrenceTime)}`, margin + 18, y, contentW - 18, 9);
-  y = drawWrappedBlock(page, regular, `(b) Info received at P.S.: Date: ${v(report.infoReceivedDate)}   Time: ${v(report.infoReceivedTime)}`, margin + 18, y, contentW - 18, 9);
-  y = drawWrappedBlock(page, regular, `(c) G.D. Entry No.: ${v(report.gdEntryNo)}   Time: ${v(report.gdEntryTime)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(a) Day: ${v(report.occurrenceDay)}   Date: ${v(report.date_of_occurrence)}   Time: ${v(report.time_of_occurrence)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(b) Info received at P.S.: Date: ${v(report.filingDate)}   Time: ${v(report.filingTime)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(c) G.D. Entry No.: ${v(report.gdEntryNo)}   Time: ${v(report.filingTime)}`, margin + 18, y, contentW - 18, 9);
   y -= 6;
   drawHR(page, margin, y, contentW);
   y -= 14;
@@ -169,8 +158,8 @@ async function buildFIRPdf(report) {
   // ── Item 5 — Place ──
   ensureSpace(70);
   y = drawSectionHeading(page, fonts, "5. Place of Occurrence:", margin, y, 10);
-  y = drawWrappedBlock(page, regular, `(a) Direction & Distance from P.S.: ${v(report.directionDistance)}   Beat No.: ${v(report.beatNo)}`, margin + 18, y, contentW - 18, 9);
-  y = drawWrappedBlock(page, regular, `(b) Address: ${v(report.placeAddress)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(a) Direction & Distance from P.S.: ${v(report.distance_and_direction_from_ps)}   Beat No.: ${v(report.beatNo)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(b) Address: ${v(report.place_of_occurrence)}`, margin + 18, y, contentW - 18, 9);
   y -= 6;
   drawHR(page, margin, y, contentW);
   y -= 14;
@@ -288,10 +277,6 @@ function triggerDownload(bytes, mime, filename) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-/**
- * Generates the FIR PDF and opens the browser print dialog for the PDF itself
- * (not the webpage). Uses a hidden iframe to render and print the PDF.
- */
 export async function printFIR(report) {
   const pdfBytes = await buildFIRPdf(report);
   const blob = new Blob([pdfBytes], { type: "application/pdf" });
@@ -325,6 +310,8 @@ export async function printFIR(report) {
 }
 
 export function downloadAsTxt(report) {
+  console.log(report);
+  
   const v = (x) => x || "—";
   const D = "─".repeat(65);
   const txt = [
@@ -339,12 +326,12 @@ export function downloadAsTxt(report) {
     ` (iii)${v(report.act3)} — ${v(report.sections3)}`,
     ` (iv) ${v(report.otherActs)}`,
     D,
-    `3. Occurrence: ${v(report.occurrenceDay)} ${v(report.occurrenceDate)} ${v(report.occurrenceTime)}`,
-    `   Info received: ${v(report.infoReceivedDate)} ${v(report.infoReceivedTime)}`,
-    `   G.D. Entry: ${v(report.gdEntryNo)}  Time: ${v(report.gdEntryTime)}`,
+    `3. Occurrence: ${v(report.occurrenceDay)} ${v(report.date_of_occurrence)} ${v(report.time_of_occurrence)}`,
+    `   Info received: ${v(report.filingDate)} ${v(report.filingTime)}`,
+    `   G.D. Entry: ${v(report.gdEntryNo)}  Time: ${v(report.filingTime)}`,
     `4. Type: ${v(report.infoType)}`,
     D,
-    `5. Place: ${v(report.placeAddress)}  (${v(report.directionDistance)})`,
+    `5. Place: ${v(report.place_of_occurrence)}  (${v(report.distance_and_direction_from_ps)})`,
     D,
     "6. Complainant:",
     `   Name: ${v(report.complainantName)}`,
@@ -379,9 +366,9 @@ hr{border-top:1px solid #000}.val{border-bottom:1px solid #888;display:inline-bl
 <h1>FIRST INFORMATION REPORT</h1><h2>(Under Section 154 Cr.P.C)</h2><hr>
 <div class="row">1. Dist: <span class="val">${v(report.district)}</span> &nbsp;P.S.: <span class="val">${v(report.policeStation)}</span> &nbsp;Year: <span class="val">${v(report.year)}</span> &nbsp;F.I.R. No.: <b><span class="val">${v(report.firNumber)}</span></b> &nbsp;Date: <span class="val">${v(report.filingDate)}</span></div>
 <div class="row">2. (i) ${v(report.act1)} — ${v(report.sections1)}<br>(ii) ${v(report.act2)} — ${v(report.sections2)}<br>(iii) ${v(report.act3)} — ${v(report.sections3)}<br>(iv) ${v(report.otherActs)}</div>
-<div class="row">3. Occurrence: ${v(report.occurrenceDay)} ${v(report.occurrenceDate)} ${v(report.occurrenceTime)}<br>Info received: ${v(report.infoReceivedDate)} ${v(report.infoReceivedTime)}<br>G.D.: ${v(report.gdEntryNo)} / ${v(report.gdEntryTime)}</div>
+<div class="row">3. Occurrence: ${v(report.occurrenceDay)} ${v(report.date_of_occurrence)} ${v(report.time_of_occurrence)}<br>Info received: ${v(report.infoReceivedDate)} ${v(report.infoReceivedTime)}<br>G.D.: ${v(report.gdEntryNo)} / ${v(report.gdEntryTime)}</div>
 <div class="row">4. Type: ${v(report.infoType)}</div>
-<div class="row">5. Place: ${v(report.placeAddress)} (${v(report.directionDistance)})</div>
+<div class="row">5. Place: ${v(report.place_of_occurrence)} (${v(report.distance_and_direction_from_ps)})</div>
 <div class="row">6. Name: ${v(report.complainantName)}<br>Father/Husband: ${v(report.fatherHusbandName)}<br>DOB: ${v(report.complainantDOB)} Nationality: ${v(report.nationality)}<br>Occupation: ${v(report.occupation)}<br>Address: ${v(report.complainantAddress)}</div>
 <div class="row">7. Accused:<div class="block">${v(report.accusedDetails)}</div></div>
 <div class="row">8. Delay: ${v(report.delayReason)}</div>
