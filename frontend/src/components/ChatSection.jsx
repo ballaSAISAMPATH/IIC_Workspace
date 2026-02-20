@@ -145,6 +145,8 @@ export default function ChatSection({ onFIRReady }) {
     await speakText(response.message);
 
     if (response.firReport) {
+      console.log("inchatsection",response.firReport);
+      
       onFIRReady(response.firReport);
       setIsFocused(false);
       setTimeout(() => document.getElementById("report")?.scrollIntoView({ behavior: "smooth" }), 800);

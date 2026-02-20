@@ -6,7 +6,8 @@ import { downloadAsTxt, downloadAsDocx, printFIR, downloadAsPDF } from "../servi
 
 export default function ReportSection({ report }) {
   const ref = useRef(null);
-
+  console.log("here",report);
+  
   useEffect(() => {
     if (!report || !ref.current) return;
     const ctx = gsap.context(() => {
@@ -104,18 +105,18 @@ export default function ReportSection({ report }) {
               <div className="if1-sub-row">
                 <span className="if1-sub-label">(a) Occurrence of Offence:</span>
                 <span className="if1-sub-label">Day</span><span className="if1-sub-val">{r.occurrenceDay || "—"}</span>
-                <span className="if1-sub-label">Date</span><span className="if1-sub-val">{r.occurrenceDate || "—"}</span>
-                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.occurrenceTime || "—"}</span>
+                <span className="if1-sub-label">Date</span><span className="if1-sub-val">{r.date_of_occurrence || "—"}</span>
+                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.time_of_occurrence || "—"}</span>
               </div>
               <div className="if1-sub-row">
                 <span className="if1-sub-label">(b) Information received at P.S.:</span>
-                <span className="if1-sub-label">Date</span><span className="if1-sub-val">{r.infoReceivedDate || "—"}</span>
-                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.infoReceivedTime || "—"}</span>
+                <span className="if1-sub-label">Date</span><span className="if1-sub-val">{r.filingDate || "—"}</span>
+                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.filingTime || "—"}</span>
               </div>
               <div className="if1-sub-row">
                 <span className="if1-sub-label">(c) General Diary Reference:</span>
                 <span className="if1-sub-label">Entry No.</span><span className="if1-sub-val">{r.gdEntryNo || "—"}</span>
-                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.gdEntryTime || "—"}</span>
+                <span className="if1-sub-label">Time</span><span className="if1-sub-val">{r.filingTime || "—"}</span>
               </div>
             </div>
           </div>
@@ -134,13 +135,13 @@ export default function ReportSection({ report }) {
               <p className="if1-section-heading">Place of Occurrence:</p>
               <div className="if1-sub-row">
                 <span className="if1-sub-label">(a) Direction &amp; Distance from P.S.</span>
-                <span className="if1-sub-val">{r.directionDistance || "—"}</span>
+                <span className="if1-sub-val">{r.distance_and_direction_from_ps || "—"}</span>
                 <span className="if1-sub-label">Beat No.</span>
-                <span className="if1-sub-val">{r.beatNo || "—"}</span>
+                <span className="if1-sub-val">{r.beatNo || "1"}</span>
               </div>
               <div className="if1-sub-row-full">
                 <span className="if1-sub-label">(b) Address</span>
-                <span className="if1-sub-val-long">{r.placeAddress || "—"}</span>
+                <span className="if1-sub-val-long">{r.place_of_occurrence || "—"}</span>
               </div>
               {(r.outsidePS || r.outsideDistrict) && (
                 <div className="if1-sub-row">

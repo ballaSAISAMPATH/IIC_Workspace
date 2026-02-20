@@ -1,5 +1,4 @@
-// src/services/chatService.js
-// Single-paragraph input → POST to /FIR_filing API → structured IF1 report
+
 import axios from "axios";
 const API_URL = "http://127.0.0.1:8000/FIR_filing";
 
@@ -52,7 +51,7 @@ class ChatBot {
 
   reset() {
     this._language = "en-US";
-    this._awaiting = "statement"; // 'statement' | 'done'
+    this._awaiting = "statement"; 
     this.isComplete = false;
     this._firReport = null;
   }
@@ -67,14 +66,12 @@ class ChatBot {
     };
   }
 
-  // Called by ChatSection after user submits their paragraph
-  // Returns { message, firReport } — firReport is null until API responds
+
   async getNextResponse(userText) {
     if (this._awaiting !== "statement") {
       return { message: "Your FIR has already been generated. Please start a new FIR to file another.", firReport: this._firReport };
     }
 
-    // Tell user we're processing
     const processingMsg = PROCESSING_MSG[this._language] || PROCESSING_MSG["en-US"];
 
     try {
@@ -103,10 +100,8 @@ class ChatBot {
     FIR_TEXT: statement,
   });
 
-  // Axios already parsed JSON
   console.log("API raw response:", response.data);
 
-  // ⬇️ IMPORTANT: backend wraps FIR under "message"
   const d = response.data.message;
 
   if (!d) {
@@ -150,19 +145,21 @@ class ChatBot {
     district: d.district,
     policeStation: d.police_station,
     year: d.year,
-
+    infoType: d.information_type || "oral",
     act1, sections1,
     act2, sections2,
     act3, sections3,
     otherActs,
-
+    date_of_occurrence: d.date_of_occurrence,
+    time_of_occurrence: d.time_of_occurrence,
     accusedDetails,
+    place_of_occurrence: d.place_of_occurrence,
     propertiesStolen,
     totalPropertyValue: d.total_property_value,
-
+    distance_and_direction_from_ps: d.distance_and_direction_from_ps,
     complainantName: d.complainant_name,
     complainantAddress: d.complainant_address,
-
+    
     delayReason: d.delay_in_reporting_reason,
     firContents: d.fir_contents,
   };

@@ -49,12 +49,14 @@ class LLMFIRExtraction(BaseModel):
     accused_list: List[Accused]
     complainant_name: Optional[str]
     complainant_address: Optional[str]
-    fir_contents: str
+    fir_contents: str= Field(description="clear and meaningful summary of the story and the fir")
     property_details: List[PropertyItem]
     total_property_value: Optional[str]
     delay_in_reporting_reason: Optional[str]
     action_taken_description: Optional[str]
-
+    date_of_occurrence: Optional[str]
+    time_of_occurrence: Optional[str]
+    place_of_occurrence: Optional[str]
 
 class FIRFormIF1(BaseModel):
     district: Optional[str]
@@ -62,10 +64,11 @@ class FIRFormIF1(BaseModel):
     year: Optional[str]
     fir_number: Optional[str]
     fir_date: Optional[str]
-
+    date_of_occurrence: Optional[str]
+    time_of_occurrence: Optional[str]
     acts_and_sections: List[LawSection] = Field(default_factory=list)
     other_acts_and_sections: Optional[str] = None
-
+    place_of_occurrence: Optional[str]
     information_received_date: Optional[str]
     information_received_time: Optional[str]
     general_diary_entry_numbers: Optional[str]
@@ -176,14 +179,15 @@ def build_final_fir(state: dict):
         police_station=loc["police_station"],
         year=dt["year"],
         fir_number=generate_fir_number(),
-
+        date_of_occurrence=llm.date_of_occurrence,
+        time_of_occurrence=llm.time_of_occurrence,
         fir_date=dt["date"],
         information_received_date=dt["date"],
         information_received_time=dt["time"],
         general_diary_entry_numbers="AUTO",
         general_diary_time=dt["time"],
         distance_and_direction_from_ps=loc["distance_and_direction_from_ps"],
-
+        place_of_occurrence=llm.place_of_occurrence,
         acts_and_sections=llm.acts_and_sections,
         accused_list=llm.accused_list,
         complainant_name=llm.complainant_name,
