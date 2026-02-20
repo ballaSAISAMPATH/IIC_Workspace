@@ -3,7 +3,7 @@ import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = "http://localhost:8000/api/v1/fir";
+const API_BASE = "http://localhost:9000/api/v1/fir";
 
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
 const fmt = (n) => n?.toLocaleString("en-IN") ?? "—";
