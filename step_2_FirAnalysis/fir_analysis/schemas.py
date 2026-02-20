@@ -79,6 +79,41 @@ class MaskPreviewResponse(BaseModel):
     )
 
 
+# ── Past cases ───────────────────────────────────────────
+
+class PastCaseCreate(BaseModel):
+    title: str = Field(..., description="Case title or citation, e.g. 'State vs Raju 2019'")
+    court: str = Field(..., description="Court name, e.g. 'Sessions Court, Hyderabad'")
+    year: int = Field(..., ge=1950, le=2100)
+    ipc_sections: list[str] = Field(..., description="IPC sections involved, e.g. ['IPC 379']")
+    case_nature: str = Field(..., description="Nature of case, e.g. 'Theft'")
+    facts: str = Field(..., description="Brief facts of the case (2-5 sentences)")
+    judgement: str = Field(..., description="What the court decided and why")
+    outcome: str = Field(..., description="Convicted / Acquitted / Settled / Compounded")
+    sentence_or_relief: str = Field(..., description="Sentence given or relief granted")
+    source_url: Optional[str] = Field(None, description="URL to full judgement if available")
+
+
+class PastCaseResponse(BaseModel):
+    id: int
+    title: str
+    court: str
+    year: int
+    ipc_sections: list[str]
+    case_nature: str
+    facts: str
+    judgement: str
+    outcome: str
+    sentence_or_relief: str
+    source_url: Optional[str] = None
+    added_at: str
+
+
+class RelevantCasesResponse(BaseModel):
+    matched_count: int
+    cases: list[PastCaseResponse]
+
+
 # ── Gemini legal analysis ────────────────────────────────
 
 class LegalAnalysis(BaseModel):
@@ -94,6 +129,10 @@ class LegalAnalysis(BaseModel):
     key_weaknesses: list[str]
     recommended_action: str
     recommended_action_reasoning: str
+    similar_past_cases: list[dict] = Field(
+        default=[],
+        description="Real Indian court cases similar to this one, with outcome and relevance"
+    )
     required_documents: list[str]
     optional_but_helpful_documents: list[str]
     immediate_next_steps: list[str]

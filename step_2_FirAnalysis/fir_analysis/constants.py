@@ -121,7 +121,7 @@ FIR TEXT:
 """
 
 # ── Prompt: Legal analysis (Gemini) ──────────────────────────────────────────
-LEGAL_ANALYSIS_PROMPT_TEMPLATE = """You are an expert Indian criminal lawyer and legal analyst.
+LEGAL_ANALYSIS_PROMPT_TEMPLATE = """You are an expert Indian criminal lawyer and legal analyst with deep knowledge of Indian court judgements.
 You will be given details of an FIR (First Information Report) with personal details masked for privacy.
 Analyse the case objectively and respond ONLY with a valid JSON object matching the schema below.
 Today's date is {today}.
@@ -162,14 +162,34 @@ Respond with this exact JSON schema — no extra keys, no prose:
     "notes": string
   }},
   "win_probability_percent": int (0-100),
-  "win_probability_reasoning": string (3-5 sentences explaining why),
+  "win_probability_reasoning": string (3-5 sentences — mention relevant past cases if you know any),
   "key_strengths": [string (at least 2)],
   "key_weaknesses": [string],
   "recommended_action": "Proceed to Trial" | "Negotiate Settlement" | "Mediation / Lok Adalat" | "Drop the Case",
   "recommended_action_reasoning": string,
+  "similar_past_cases": [
+    {{
+      "case_title": string (e.g. "State of Maharashtra vs Vijay Salaskar 2010"),
+      "court": string (e.g. "Supreme Court of India" or "Bombay High Court"),
+      "year": int,
+      "ipc_sections": [string],
+      "what_happened": string (2-3 sentences describing the facts of that case),
+      "judgement_summary": string (2-3 sentences on what the court decided and why),
+      "outcome": "Convicted" | "Acquitted" | "Settled" | "Compounded" | "Partially Convicted",
+      "sentence_or_relief": string (e.g. "3 years RI and fine of Rs 10,000"),
+      "relevance_to_current_case": string (1-2 sentences on why this case is relevant here)
+    }}
+  ],
   "required_documents": [string],
   "optional_but_helpful_documents": [string],
   "immediate_next_steps": [string (ordered list of 4-6 steps victim should take NOW)],
   "important_caveats": [string]
 }}
+
+For similar_past_cases:
+- Include 2 to 4 real Indian court cases that closely match the current IPC sections and facts.
+- Prefer Supreme Court and High Court judgements as they carry more precedent value.
+- If you know the exact citation (AIR, SCC, Cr.LJ), include it in case_title.
+- Only include cases you are confident about — do not fabricate case names or citations.
+- If no closely matching cases come to mind, return an empty array [].
 """
