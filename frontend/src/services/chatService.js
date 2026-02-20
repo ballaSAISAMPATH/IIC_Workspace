@@ -1,6 +1,6 @@
 // src/services/chatService.js
 // Single-paragraph input → POST to /FIR_filing API → structured IF1 report
-
+import axios from "axios";
 const API_URL = "http://127.0.0.1:8000/FIR_filing";
 
 const GREETING = {
@@ -99,125 +99,74 @@ class ChatBot {
   }
 
   async _callAPI(statement) {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ statement }),
-    });
+  const response = await axios.post(API_URL, {
+    FIR_TEXT: statement,
+  });
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
+  // Axios already parsed JSON
+  console.log("API raw response:", response.data);
 
-    const json = await response.json();
-    console.log("API response:", json);
+  // ⬇️ IMPORTANT: backend wraps FIR under "message"
+  const d = response.data.message;
 
-    // Response is nested under json.message
-    const d = json.message;
-    const now = new Date();
-
-    // ── Acts & Sections array → flat fields ──
-    const acts = Array.isArray(d.acts_and_sections) ? d.acts_and_sections : [];
-    const act1      = acts[0]?.act_name || "";
-    const sections1 = acts[0]?.sections?.join(", ") || "";
-    const act2      = acts[1]?.act_name || "";
-    const sections2 = acts[1]?.sections?.join(", ") || "";
-    const act3      = acts[2]?.act_name || "";
-    const sections3 = acts[2]?.sections?.join(", ") || "";
-    // Any extra acts beyond index 2 go into otherActs
-    const otherActs = acts.slice(3).map(a => `${a.act_name} s.${a.sections?.join(", ")}`).join("; ")
-                      || d.other_acts_and_sections
-                      || "";
-
-    // ── Accused list array → readable string ──
-    const accusedDetails = Array.isArray(d.accused_list)
-      ? d.accused_list.map((a, i) => {
-          const parts = [];
-          parts.push(`Accused ${i + 1}:`);
-          parts.push(`Name: ${a.name || "Unknown"}`);
-          parts.push(`Status: ${a.known_status || "unknown"}`);
-          if (a.address)     parts.push(`Address: ${a.address}`);
-          if (a.description) parts.push(`Description: ${a.description}`);
-          return parts.join(" | ");
-        }).join("\n")
-      : "";
-
-    // ── Property details array → readable string ──
-    const propertiesStolen = Array.isArray(d.property_details)
-      ? d.property_details.map((p, i) => {
-          const parts = [`Item ${i + 1}: ${p.description || "—"}`];
-          if (p.quantity)           parts.push(`Qty: ${p.quantity}`);
-          if (p.value)              parts.push(`Value: ${p.value}`);
-          if (p.identification_marks) parts.push(`ID Marks: ${p.identification_marks}`);
-          return parts.join(" | ");
-        }).join("\n")
-      : "";
-
-    return {
-      firNumber:        d.fir_number                  || generateFIRNumber(),
-      filingDate:       d.fir_date                    || formatDate(now),
-      filingTime:       d.information_received_time   || formatTime(now),
-
-      // Item 1
-      district:         d.district                    || "",
-      policeStation:    d.police_station              || "",
-      year:             d.year                        || String(now.getFullYear()),
-
-      // Item 2 — Acts & Sections
-      act1, sections1,
-      act2, sections2,
-      act3, sections3,
-      otherActs,
-
-      // Item 3 — Occurrence (backend doesn't return occurrence date separately,
-      // so we fall back to fir_date)
-      occurrenceDay:    d.occurrence_day              || "",
-      occurrenceDate:   d.occurrence_date             || d.fir_date || "",
-      occurrenceTime:   d.occurrence_time             || "",
-      infoReceivedDate: d.information_received_date   || formatDate(now),
-      infoReceivedTime: d.information_received_time   || formatTime(now),
-      gdEntryNo:        d.general_diary_entry_numbers || "",
-      gdEntryTime:      d.general_diary_time          || "",
-
-      // Item 4
-      infoType:         d.info_type                   || "Oral",
-
-      // Item 5 — Place
-      directionDistance: d.distance_and_direction_from_ps || "",
-      beatNo:            d.beat_no                    || "",
-      placeAddress:      d.place_address              || d.complainant_address || "",
-      outsidePS:         d.outside_ps                 || "",
-      outsideDistrict:   d.outside_district           || "",
-
-      // Item 6 — Complainant
-      complainantName:      d.complainant_name        || "",
-      fatherHusbandName:    d.father_husband_name     || "",
-      complainantDOB:       d.complainant_dob         || "",
-      nationality:          d.nationality             || "Indian",
-      passportNo:           d.passport_no             || "",
-      passportIssueDate:    d.passport_issue_date     || "",
-      passportIssuePlace:   d.passport_issue_place    || "",
-      occupation:           d.occupation              || "",
-      complainantAddress:   d.complainant_address     || "",
-      complainantPhone:     d.complainant_phone       || "",
-
-      // Item 7 — Accused
-      accusedDetails,
-
-      // Item 8 — Delay reason
-      delayReason:          d.delay_in_reporting_reason || "No delay",
-
-      // Item 9 & 10 — Properties
-      propertiesStolen,
-      totalPropertyValue:   d.total_property_value    || "",
-
-      // Item 11
-      inquestReport:        d.inquest_report          || "",
-
-      // Item 12 — Full narrative
-      firContents:          d.fir_contents            || statement,
-    };
+  if (!d) {
+    throw new Error("Invalid API response: missing 'message'");
   }
+
+  const acts = Array.isArray(d.acts_and_sections) ? d.acts_and_sections : [];
+  const act1      = acts[0]?.act_name || "";
+  const sections1 = acts[0]?.sections?.join(", ") || "";
+  const act2      = acts[1]?.act_name || "";
+  const sections2 = acts[1]?.sections?.join(", ") || "";
+  const act3      = acts[2]?.act_name || "";
+  const sections3 = acts[2]?.sections?.join(", ") || "";
+
+  const otherActs =
+    acts.slice(3).map(a => `${a.act_name} s.${a.sections?.join(", ")}`).join("; ")
+    || d.other_acts_and_sections
+    || "";
+
+  const accusedDetails = Array.isArray(d.accused_list)
+    ? d.accused_list
+        .map((a, i) =>
+          `Accused ${i + 1}: Name: ${a.name || "Unknown"} | Status: ${a.known_status || "unknown"}`
+        )
+        .join("\n")
+    : "";
+
+  const propertiesStolen = Array.isArray(d.property_details)
+    ? d.property_details
+        .map((p, i) =>
+          `Item ${i + 1}: ${p.description || "—"} | Qty: ${p.quantity || 1} | Value: ${p.value || ""}`
+        )
+        .join("\n")
+    : "";
+
+  return {
+    firNumber: d.fir_number,
+    filingDate: d.fir_date,
+    filingTime: d.information_received_time,
+
+    district: d.district,
+    policeStation: d.police_station,
+    year: d.year,
+
+    act1, sections1,
+    act2, sections2,
+    act3, sections3,
+    otherActs,
+
+    accusedDetails,
+    propertiesStolen,
+    totalPropertyValue: d.total_property_value,
+
+    complainantName: d.complainant_name,
+    complainantAddress: d.complainant_address,
+
+    delayReason: d.delay_in_reporting_reason,
+    firContents: d.fir_contents,
+  };
+}
 }
 
 export const chatBot = new ChatBot();
