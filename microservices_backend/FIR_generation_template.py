@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-
+# remove ipc later
 FIR_generation_prompt = ChatPromptTemplate.from_messages([
     (
         "system",
@@ -9,6 +9,7 @@ FIR_generation_prompt = ChatPromptTemplate.from_messages([
         "- Extract offence-related facts from the narration.\n"
         "- Identify ONLY clearly applicable legal sections under Indian law.\n\n"
         "ALLOWED LAW SET :\n"
+        "- Indian Penal Code\n"
         "- Bharatiya Nyaya Sanhita (BNS), 2023\n"
         "- Information Technology Act, 2000\n"
         "- NDPS Act, 1985\n"
@@ -26,7 +27,6 @@ FIR_generation_prompt = ChatPromptTemplate.from_messages([
         "STRICT RULES:\n"
         "- If a section is not explicitly supported by facts, DO NOT include it.\n"
         "- Do NOT guess or approximate sections.\n"
-        "- Do NOT cite IPC sections.\n"
         "- Do NOT include civil-only laws.\n"
         "- Do NOT enumerate laws unnecessarily.\n"
         "- Prefer omission over over-inclusion.\n"
