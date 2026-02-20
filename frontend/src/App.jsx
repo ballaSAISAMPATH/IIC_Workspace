@@ -6,8 +6,9 @@ import ChatSection from "./components/ChatSection";
 import ReportSection from "./components/ReportSection";
 import Footer from "./components/Footer";
 import VoiceDemo from "./components/VoiceDemo";
-
-function App() {
+import FIRAnalysisPage from "./pages/FIRAnalysisPage";
+import { Routes, Route } from "react-router-dom";
+function Home() {
   const [firReport, setFirReport] = useState(null);
 
   return (
@@ -18,8 +19,17 @@ function App() {
       <ChatSection onFIRReady={setFirReport} />
       <ReportSection report={firReport} />
       <Footer />
-      <VoiceDemo/>
+      <VoiceDemo />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/fir-analysis" element={<FIRAnalysisPage />} />
+    </Routes>
   );
 }
 

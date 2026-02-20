@@ -192,6 +192,22 @@ class FIRAnalysisService:
             extracted.incident_description, entities_for_masking
         )
 
+        # ── DEBUG — prints exactly what was masked in your terminal ──
+        print("\n" + "="*60)
+        print("🔒 MASKING TABLE (never sent to cloud)")
+        print("="*60)
+        entries = masker.get_mask_entries()
+        if entries:
+            for entry in entries:
+                print(f"  [{entry['entity_type'].upper()}]  {entry['original']}  →  {entry['token']}")
+        else:
+            print("  (nothing masked — no PII found in description)")
+        print("-"*60)
+        print(f"  Original : {extracted.incident_description}")
+        print(f"  Masked   : {masked_description}")
+        print("="*60 + "\n")
+        # ── END DEBUG ────────────────────────────────────────────────
+
         district_label = " / ".join(
             filter(None, [extracted.police_station, extracted.district])
         ) or "Unknown"
@@ -210,6 +226,7 @@ class FIRAnalysisService:
     # ── Step 3: Gemini legal analysis ────────────────────────────────────────
 
     async def _legal_analysis(self, payload: MaskedFIRPayload) -> LegalAnalysis:
+
         prompt = LEGAL_ANALYSIS_PROMPT_TEMPLATE.format(
             today=date.today().isoformat(),
             date_of_incident=payload.date_of_incident or "Unknown",
