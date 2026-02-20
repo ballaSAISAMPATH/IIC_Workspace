@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+httpx
+google-generativeai
+sqlalchemy
+aiosqlite       # async SQLite driver
+python-multipart  # for future file upload support
+python-dotenv
