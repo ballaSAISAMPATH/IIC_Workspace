@@ -41,23 +41,6 @@ export default function ChatSection({ onFIRReady }) {
     }
   }, [isFocused]);
 
-<<<<<<< HEAD
-=======
-   const speakText = async (text) => {
-      setIsSpeaking(true);
-      await ttsService.speak(text, language);
-      setIsSpeaking(false);
-    };
-  const startConversation = async () => {
-    if (hasStarted) return;
-    setHasStarted(true);
-    chatBot.reset();
-    chatBot.setLanguage(language);
-    const greeting = chatBot.getGreeting();
-    setMessages([{ role: "assistant", content: greeting.message, id: Date.now() }]);
-    await speakText(greeting.message);
-  };
->>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".chat-header-anim", {
@@ -69,13 +52,13 @@ export default function ChatSection({ onFIRReady }) {
         y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out",
       });
     }, sectionRef);
-    
+
     const trigger = ScrollTrigger.create({
       trigger: sectionRef.current, start: "top 60%",
       onEnter: () => { if (!hasStarted) startConversation(); }, once: true,
     });
     return () => { trigger.kill(); ctx.revert(); };
-  }, []); 
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = messagesContainerRef.current;
@@ -98,8 +81,21 @@ export default function ChatSection({ onFIRReady }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  
-   
+  const startConversation = async () => {
+    if (hasStarted) return;
+    setHasStarted(true);
+    chatBot.reset();
+    chatBot.setLanguage(language);
+    const greeting = chatBot.getGreeting();
+    setMessages([{ role: "assistant", content: greeting.message, id: Date.now() }]);
+    await speakText(greeting.message);
+  };
+
+  const speakText = async (text) => {
+    setIsSpeaking(true);
+    await ttsService.speak(text, language);
+    setIsSpeaking(false);
+  };
 
   const stopSpeaking = () => { ttsService.stop(); setIsSpeaking(false); };
 
@@ -170,7 +166,7 @@ export default function ChatSection({ onFIRReady }) {
       <div className="section-divider" />
       <div className="chat-inner">
         <div className="section-header">
-          <span className="section-badge chat-header-anim ">File Your FIR</span>
+          <span className="section-badge chat-header-anim">File Your FIR</span>
           <h2 className="section-title chat-header-anim">Tell us what happened</h2>
           <p className="section-desc chat-header-anim">
             Describe the full incident in your own words — what happened, when, where, who was involved,
@@ -300,10 +296,7 @@ export default function ChatSection({ onFIRReady }) {
   );
 }
 
-<<<<<<< HEAD
 /* ── Sub-components ── */
-=======
->>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
 
 function ChatBubble({ message, onSpeak }) {
   const ref = useRef(null);
