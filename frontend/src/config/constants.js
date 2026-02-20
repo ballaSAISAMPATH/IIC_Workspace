@@ -1,79 +1,78 @@
-// Application-wide constants and configuration
-
-export const APP_NAME = "FIR";
-export const APP_FULL_NAME = "File It Responsibly";
-
-// STT: Using Web Speech API (browser-native, free, supports Telugu)
-// For production, you'd use Whisper API or Google Cloud Speech-to-Text
-
-// TTS: Using Web Speech API (browser-native, free)
+// src/config/constants.js
 
 export const LANGUAGES = [
-  { code: "en-US", label: "English", shortLabel: "EN" },
-];
-
-export const FIR_SECTIONS = [
-  "complainantName",
-  "complainantAddress",
-  "complainantPhone",
-  "incidentDate",
-  "incidentTime",
-  "incidentLocation",
-  "incidentDescription",
-  "accusedDescription",
-  "witnessDetails",
-  "evidenceDetails",
+  { code: "en-US",  label: "English (US)",    shortLabel: "EN" },
+  { code: "en-IN",  label: "English (India)",  shortLabel: "EN-IN" },
+  { code: "te-IN",  label: "Telugu",           shortLabel: "తెలుగు" },
+  { code: "hi-IN",  label: "Hindi",            shortLabel: "हिंदी" },
+  { code: "ta-IN",  label: "Tamil",            shortLabel: "தமிழ்" },
+  { code: "kn-IN",  label: "Kannada",          shortLabel: "ಕನ್ನಡ" },
 ];
 
 export const FIR_SECTION_LABELS = {
-  complainantName: "Complainant Name",
-  complainantAddress: "Complainant Address",
-  complainantPhone: "Complainant Phone",
-  incidentDate: "Date of Incident",
-  incidentTime: "Time of Incident",
-  incidentLocation: "Location of Incident",
-  incidentDescription: "Description of Incident",
-  accusedDescription: "Description of Accused",
-  witnessDetails: "Witness Details",
-  evidenceDetails: "Evidence Details",
+  // Header
+  firNumber:            "FIR No.",
+  filingDate:           "Date",
+  filingTime:           "Time",
+
+  // Item 1
+  district:             "District",
+  policeStation:        "P.S.",
+  year:                 "Year",
+
+  // Item 2
+  act1:                 "Act (i)",
+  sections1:            "Sections (i)",
+  act2:                 "Act (ii)",
+  sections2:            "Sections (ii)",
+  act3:                 "Act (iii)",
+  sections3:            "Sections (iii)",
+  otherActs:            "Other Acts & Sections (iv)",
+
+  // Item 3
+  occurrenceDay:        "Day of Occurrence",
+  occurrenceDate:       "Date of Occurrence",
+  occurrenceTime:       "Time of Occurrence",
+  infoReceivedDate:     "Information Received at P.S. — Date",
+  infoReceivedTime:     "Information Received at P.S. — Time",
+  gdEntryNo:            "General Diary Entry No.",
+  gdEntryTime:          "G.D. Entry Time",
+
+  // Item 4
+  infoType:             "Type of Information",
+
+  // Item 5
+  directionDistance:    "Direction & Distance from P.S.",
+  beatNo:               "Beat No.",
+  placeAddress:         "Place of Occurrence — Address",
+  outsidePS:            "Outside P.S. Name (if applicable)",
+  outsideDistrict:      "Outside District (if applicable)",
+
+  // Item 6 — Complainant
+  complainantName:      "Complainant Name",
+  fatherHusbandName:    "Father's / Husband's Name",
+  complainantDOB:       "Date / Year of Birth",
+  nationality:          "Nationality",
+  passportNo:           "Passport No.",
+  passportIssueDate:    "Passport Date of Issue",
+  passportIssuePlace:   "Passport Place of Issue",
+  occupation:           "Occupation",
+  complainantAddress:   "Complainant Address",
+  complainantPhone:     "Phone",
+
+  // Item 7
+  accusedDetails:       "Details of Known / Suspected / Unknown Accused",
+
+  // Item 8
+  delayReason:          "Reasons for Delay in Reporting",
+
+  // Item 9 & 10
+  propertiesStolen:     "Particulars of Properties Stolen / Involved",
+  totalPropertyValue:   "Total Value of Properties Stolen / Involved",
+
+  // Item 11
+  inquestReport:        "Inquest Report / U.D. Case No.",
+
+  // Item 12
+  firContents:          "F.I.R. Contents",
 };
-
-// System prompt for the FIR chatbot
-export const SYSTEM_PROMPT = `You are an AI assistant helping to file a First Information Report (FIR). Your job is to collect all necessary information from the complainant in a conversational, empathetic manner.
-
-You need to collect the following information:
-1. Complainant's full name
-2. Complainant's address
-3. Complainant's phone number
-4. Date of the incident
-5. Time of the incident
-6. Location/place of the incident
-7. Detailed description of what happened
-8. Description of the accused (if known)
-9. Witness details (if any)
-10. Evidence details (if any)
-
-Guidelines:
-- Ask ONE question at a time
-- Be empathetic and professional
-- If the user provides multiple pieces of information at once, acknowledge all of them
-- After collecting all information, generate a structured FIR report
-- When you have ALL the required information, respond with the FIR report in a SPECIFIC JSON format
-
-When you have enough information to generate the FIR, your response MUST include a JSON block wrapped in \`\`\`json ... \`\`\` with this structure:
-{
-  "firReport": {
-    "complainantName": "...",
-    "complainantAddress": "...",
-    "complainantPhone": "...",
-    "incidentDate": "...",
-    "incidentTime": "...",
-    "incidentLocation": "...",
-    "incidentDescription": "...",
-    "accusedDescription": "...",
-    "witnessDetails": "...",
-    "evidenceDetails": "..."
-  }
-}
-
-Start by greeting the user and asking for their name.`;

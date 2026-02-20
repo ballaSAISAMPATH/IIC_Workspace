@@ -1103,3 +1103,309 @@ textarea { font-family: inherit; }
   color: var(--c-success);
   margin-bottom: 16px;
 }
+
+/* ═══════════════════════════════════════════════════
+   FORM IF1 — Official FIR layout styles
+   Append these rules to the bottom of your index.css
+═══════════════════════════════════════════════════ */
+
+/* ── Card wrapper ── */
+.if1-card {
+  background: var(--surface, #12121e);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary, #e8e8f0);
+  max-width: 860px;
+  margin: 0 auto 2rem;
+}
+
+/* ── Form title block ── */
+.if1-title-block {
+  text-align: center;
+  border-bottom: 2px solid rgba(255,255,255,0.15);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.if1-form-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.if1-main-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin: 0 0 0.3rem;
+}
+
+.if1-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+}
+
+/* ── Item rows ── */
+.if1-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  align-items: flex-start;
+}
+
+.if1-item:last-child { border-bottom: none; }
+
+.if1-item-no {
+  font-weight: 700;
+  color: var(--accent, #7c6af7);
+  min-width: 24px;
+  font-size: 0.9rem;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Item 1 inline row ── */
+.if1-row-inline { align-items: center; flex-wrap: wrap; }
+
+.if1-inline-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.if1-field-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.if1-field-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.if1-field-value {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  min-width: 60px;
+  padding-bottom: 1px;
+}
+
+.if1-field-highlight .if1-field-value {
+  color: var(--accent, #7c6af7);
+  font-weight: 700;
+  font-size: 1rem;
+  border-bottom-color: var(--accent, #7c6af7);
+}
+
+/* ── Acts grid ── */
+.if1-acts-grid { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.if1-act-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 70px 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.if1-act-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.if1-act-value {
+  font-size: 0.88rem;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 1px;
+  min-height: 20px;
+}
+
+/* ── Generic block layout ── */
+.if1-block { width: 100%; display: flex; flex-direction: column; gap: 0.6rem; }
+
+.if1-section-heading {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #888);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Sub-rows inside items ── */
+.if1-sub-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.if1-sub-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+}
+
+.if1-sub-val {
+  font-size: 0.88rem;
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  min-width: 80px;
+  padding-bottom: 1px;
+}
+
+.if1-sub-row-full {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.if1-sub-val-long {
+  font-size: 0.9rem;
+  color: #fff;
+  flex: 1;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 2px;
+  line-height: 1.5;
+}
+
+/* ── Inline simple item (4, 10, 11) ── */
+.if1-inline-simple {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.if1-label-plain {
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+}
+
+.if1-val-plain {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+  padding-bottom: 1px;
+  min-width: 80px;
+}
+
+/* ── Two-column grid for complainant ── */
+.if1-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 1.5rem;
+}
+
+.if1-field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.if1-field-block .if1-field-value {
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── Narrative text areas ── */
+.if1-narrative {
+  font-size: 0.9rem;
+  color: var(--text-primary, #e8e8f0);
+  line-height: 1.7;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.if1-narrative-large {
+  min-height: 120px;
+  font-size: 0.92rem;
+}
+
+/* ── Legal text ── */
+.if1-legal-text {
+  font-size: 0.78rem;
+  color: var(--text-muted, #888);
+  line-height: 1.6;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Signature row ── */
+.if1-signature-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.if1-sig-block { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.if1-sig-label {
+  font-size: 0.75rem;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.if1-sig-line {
+  border-bottom: 1px solid rgba(255,255,255,0.25);
+  height: 40px;
+}
+
+.if1-sig-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted, #888);
+  margin: 0;
+}
+
+/* ── Print styles ── */
+@media print {
+  .if1-card {
+    background: #fff !important;
+    color: #000 !important;
+    border: none;
+    box-shadow: none;
+    padding: 1cm;
+    max-width: 100%;
+  }
+  .if1-main-title { color: #000 !important; }
+  .if1-item-no { color: #000 !important; }
+  .if1-field-value, .if1-act-value, .if1-sub-val, .if1-sub-val-long,
+  .if1-val-plain, .if1-narrative { color: #000 !important; }
+  .if1-field-label, .if1-act-label, .if1-sub-label, .if1-label-plain,
+  .if1-section-heading, .if1-sig-label, .if1-sig-sub, .if1-legal-text,
+  .if1-form-label, .if1-subtitle { color: #444 !important; }
+  .if1-narrative { background: #f9f9f9 !important; border-color: #ccc !important; }
+  .no-print { display: none !important; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .if1-act-row { grid-template-columns: 70px 1fr; }
+  .if1-two-col { grid-template-columns: 1fr; }
+  .if1-signature-row { grid-template-columns: 1fr; gap: 1rem; }
+  .if1-inline-fields { gap: 0.6rem; }
+  .if1-card { padding: 1rem; }
+}
