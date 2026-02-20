@@ -1,11 +1,17 @@
 // src/services/reportGenerator.js
 // Generates IF1-formatted exports: TXT, DOCX, PDF (print), and direct print
 
+<<<<<<< HEAD
 /* ── Shared formatter ── */
 function buildIF1Text(r) {
   const line = (label, val) => `${label.padEnd(42, ".")}: ${val || "—"}`;
   const divider = "─".repeat(70);
   const blankLine = "";
+=======
+export function generateFIRText(report) {
+  const divider = "═".repeat(60);
+  const thinDivider = "─".repeat(60);
+>>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
 
   return [
     "FORM – IF1 (Integrated Form)",
@@ -88,7 +94,10 @@ function buildIF1Text(r) {
   ].join("\n");
 }
 
+<<<<<<< HEAD
 /* ── Download as TXT ── */
+=======
+>>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
 export function downloadAsTxt(report) {
   const content = buildIF1Text(report);
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -100,7 +109,11 @@ export function downloadAsTxt(report) {
   URL.revokeObjectURL(url);
 }
 
+<<<<<<< HEAD
 /* ── Download as DOCX (HTML-based .doc, works in Word) ── */
+=======
+
+>>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
 export function downloadAsDocx(report) {
   const htmlContent = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -254,7 +267,14 @@ export function printFIR() {
   window.print();
 }
 
+<<<<<<< HEAD
 /* ── Download as PDF (uses print dialog) ── */
 export function downloadAsPDF() {
   window.print();
+=======
+
+export function downloadAsPDF(report) {
+  // We use the same print mechanism — user selects "Save as PDF" from print dialog
+  printFIR(report);
+>>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
 }

@@ -5,6 +5,7 @@ import HowItWorks from "./components/HowItWorks";
 import ChatSection from "./components/ChatSection";
 import ReportSection from "./components/ReportSection";
 import Footer from "./components/Footer";
+import VoiceDemo from "./components/VoiceDemo";
 
 function App() {
   const [firReport, setFirReport] = useState(null);
@@ -17,6 +18,7 @@ function App() {
       <ChatSection onFIRReady={setFirReport} />
       <ReportSection report={firReport} />
       <Footer />
+      <VoiceDemo/>
     </div>
   );
 }

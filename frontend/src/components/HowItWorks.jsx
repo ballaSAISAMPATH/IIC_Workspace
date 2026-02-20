@@ -18,19 +18,16 @@ export default function HowItWorks() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Header stagger
       gsap.from(".how-header-anim", {
         scrollTrigger: { trigger: sectionRef.current, start: "top 85%", toggleActions: "play none none none" },
         y: 30, opacity: 0, stagger: 0.12, duration: 0.7, ease: "power2.out",
       });
 
-      // Timeline connector line draws in
       gsap.from(".steps-timeline-line", {
         scrollTrigger: { trigger: gridRef.current, start: "top 85%", toggleActions: "play none none none" },
         scaleX: 0, transformOrigin: "left center", duration: 1.2, ease: "power2.inOut",
       });
 
-      // Cards stagger — use the direct ref as trigger
       const cards = gridRef.current?.querySelectorAll(".step-card");
       if (cards && cards.length > 0) {
         gsap.fromTo(cards,
@@ -42,7 +39,6 @@ export default function HowItWorks() {
         );
       }
 
-      // Step icons bounce in
       const icons = gridRef.current?.querySelectorAll(".step-card-icon");
       if (icons && icons.length > 0) {
         gsap.fromTo(icons,
@@ -54,7 +50,6 @@ export default function HowItWorks() {
         );
       }
 
-      // Bottom CTA
       if (ctaRef.current) {
         gsap.from(ctaRef.current, {
           scrollTrigger: { trigger: ctaRef.current, start: "top 92%", toggleActions: "play none none none" },
@@ -77,7 +72,6 @@ export default function HowItWorks() {
           </p>
         </div>
 
-        {/* Timeline connector (desktop only) */}
         <div className="steps-timeline">
           <div className="steps-timeline-line" />
         </div>
@@ -86,7 +80,6 @@ export default function HowItWorks() {
           {STEPS.map((step) => (
             <div key={step.num} className="step-card">
               <span className="step-card-watermark">{step.num}</span>
-              {/* Connector dot */}
               <div className="step-card-dot" />
               <div className="step-card-icon">{step.icon}</div>
               <div className="step-card-num">Step {step.num}</div>
@@ -96,7 +89,6 @@ export default function HowItWorks() {
           ))}
         </div>
 
-        {/* CTA row below steps */}
         <div className="how-cta-row" ref={ctaRef}>
           <p className="how-cta-text">
             Ready to file your FIR? It takes less than <strong>2 minutes</strong>.

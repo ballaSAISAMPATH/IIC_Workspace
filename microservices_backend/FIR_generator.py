@@ -1,7 +1,7 @@
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from dotenv import load_dotenv
 from datetime import datetime
 import uuid
@@ -39,7 +39,7 @@ class Accused(BaseModel):
 
 class PropertyItem(BaseModel):
     description: Optional[str] = None
-    quantity: Optional[str] = None
+    quantity: Optional[Union[str,int]] = None
     value: Optional[str] = None
     identification_marks: Optional[str] = None
 
@@ -53,6 +53,7 @@ class LLMFIRExtraction(BaseModel):
     property_details: List[PropertyItem]
     total_property_value: Optional[str]
     delay_in_reporting_reason: Optional[str]
+    action_taken_description: Optional[str]
 
 
 class FIRFormIF1(BaseModel):
@@ -136,11 +137,39 @@ def llm_extract_fields(state: dict):
         "mapping": state["mapping"]
     }
 
+def replace_secured_fields(value, mapping: dict):
+    if isinstance(value, str):
+        for placeholder, original in mapping.items():
+            value = value.replace(placeholder, str(original))
+        return value
+
+    if isinstance(value, list):
+        return [replace_secured_fields(v, mapping) for v in value]
+
+    if isinstance(value, dict):
+        return {k: replace_secured_fields(v, mapping) for k, v in value.items()}
+
+    return value
+
+
+def mapping_function(state: dict):
+    llm_data = state["llm_data"]      
+    mapping = state["mapping"]       
+
+    secured_data = llm_data.model_dump()
+    restored_data = replace_secured_fields(secured_data, mapping)
+    restored_llm_data = LLMFIRExtraction(**restored_data)
+
+    return {
+        "llm_data": restored_llm_data
+    }
+
 
 def build_final_fir(state: dict):
     dt = get_current_datetime()
     loc = get_device_location()
     llm = state["llm_data"]
+    
 
     fir = FIRFormIF1(
         district=loc["district"],
@@ -164,7 +193,7 @@ def build_final_fir(state: dict):
         total_property_value=llm.total_property_value,
         delay_in_reporting_reason=llm.delay_in_reporting_reason,
 
-        action_taken_description="Case registered and investigation initiated."
+        action_taken_description=llm.action_taken_description
     )
 
     return {"fir": fir}
@@ -175,24 +204,26 @@ graph = StateGraph(dict)
 
 graph.add_node("encrypt_narration", encrypt_narration)
 graph.add_node("llm_extract_fields", llm_extract_fields)
+graph.add_node("mapping_function", mapping_function)
 graph.add_node("build_final_fir", build_final_fir)
 
 graph.add_edge(START, "encrypt_narration")
 graph.add_edge("encrypt_narration", "llm_extract_fields")
-graph.add_edge("llm_extract_fields", "build_final_fir")
+graph.add_edge("llm_extract_fields", "mapping_function")
+graph.add_edge("mapping_function", "build_final_fir")
 graph.add_edge("build_final_fir", END)
 
 compiled_graph = graph.compile()
 
 
-FIR_TEXT = """
-On 15th April 2025, the complainant Rahul Mehta, aged 32 years,
-resident of Secunderabad, received multiple phone calls and WhatsApp
-messages from an unknown person claiming to be a bank officer.
-The accused obtained debit card details and OTP and transferred
-₹1,20,000/- online. The accused threatened false cases if reported.
-"""
+# FIR_TEXT = """
+# On 15th April 2025, the complainant Rahul Mehta, aged 32 years,
+# resident of Secunderabad, received multiple phone calls and WhatsApp
+# messages from an unknown person claiming to be a bank officer.
+# The accused obtained debit card details and OTP and transferred
+# ₹1,20,000/- online. The accused threatened false cases if reported.
+# """
 
-output = compiled_graph.invoke({"fir_text": FIR_TEXT})
+# output = compiled_graph.invoke({"fir_text": FIR_TEXT})
 
-print(json.dumps(output["fir"].model_dump(), indent=2))
+# print(json.dumps(output["fir"].model_dump(), indent=2))
