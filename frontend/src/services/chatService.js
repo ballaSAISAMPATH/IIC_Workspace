@@ -58,25 +58,7 @@ class ChatBot {
   }
 
   setLanguage(lang) {
-<<<<<<< HEAD
     this._language = lang;
-=======
-    this.language = lang;
-  }
-
-  _getQuestions() {
-    return [
-      {
-        key: "complainantName",
-        question: "Hello! I'm here to help you file an FIR. I'll guide you through the process step by step. Could you please tell me your full name?",
-      },
-      {
-        key: "complainantAddress",
-        question: "Thank you. Could you please provide your complete address?",
-      },
-      
-    ];
->>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
   }
 
   getGreeting() {
