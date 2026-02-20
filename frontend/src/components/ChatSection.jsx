@@ -41,23 +41,6 @@ export default function ChatSection({ onFIRReady }) {
     }
   }, [isFocused]);
 
-<<<<<<< HEAD
-=======
-   const speakText = async (text) => {
-      setIsSpeaking(true);
-      await ttsService.speak(text, language);
-      setIsSpeaking(false);
-    };
-  const startConversation = async () => {
-    if (hasStarted) return;
-    setHasStarted(true);
-    chatBot.reset();
-    chatBot.setLanguage(language);
-    const greeting = chatBot.getGreeting();
-    setMessages([{ role: "assistant", content: greeting.message, id: Date.now() }]);
-    await speakText(greeting.message);
-  };
->>>>>>> f371c116864ba6f5c526f1ba0084575aebdf083e
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".chat-header-anim", {
