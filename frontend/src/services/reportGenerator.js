@@ -1,160 +1,282 @@
 // src/services/reportGenerator.js
-// PDF download uses pdf-lib to fill the official FORM IF1 PDF
+// PDF download generates the official FORM IF1 PDF from scratch using pdf-lib
 
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-const FORM_PDF_URL = "/FORM_IF_1.pdf"; // place FORM_IF_1.pdf in your /public folder
+/* ── helpers ── */
 
-function drawText(page, font, text, x0, y_top, x1, y_bottom, fontSize = 8, pdfHeight = 792) {
-  if (!text) return;
-  const maxWidth = x1 - x0 - 2;
-  const lineHeight = fontSize + 2;
-  const baseY = pdfHeight - y_bottom + (y_bottom - y_top) * 0.1;
-
-  const words = String(text).split(" ");
+/** Word-wrap text to fit within maxWidth, returns array of strings.
+ *  Handles newlines (\n) and strips control chars that WinAnsi can't encode. */
+function wrapText(font, text, fontSize, maxWidth) {
+  if (!text) return [];
+  // Strip control characters except newline, then split on newlines first
+  const sanitized = String(text).replace(/[^\S\n]/g, " ").replace(/[^\x20-\x7E\xA0-\xFF\n]/g, "");
+  const paragraphs = sanitized.split(/\r?\n/);
   const lines = [];
-  let cur = "";
-  for (const word of words) {
-    const test = cur ? cur + " " + word : word;
-    if (font.widthOfTextAtSize(test, fontSize) > maxWidth && cur) {
-      lines.push(cur);
-      cur = word;
-    } else {
-      cur = test;
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) { lines.push(""); continue; }
+    const words = trimmed.split(/\s+/);
+    let cur = "";
+    for (const word of words) {
+      const test = cur ? cur + " " + word : word;
+      if (font.widthOfTextAtSize(test, fontSize) > maxWidth && cur) {
+        lines.push(cur);
+        cur = word;
+      } else {
+        cur = test;
+      }
     }
+    if (cur) lines.push(cur);
   }
-  if (cur) lines.push(cur);
+  return lines;
+}
 
+/**
+ * Draw a labelled field: "Label: value"
+ * Returns the new Y position after drawing.
+ */
+function drawField(page, fonts, label, value, x, y, opts = {}) {
+  const { fontSize = 9, labelWidth = 160, maxWidth = 470, indent = 0 } = opts;
+  const lineHeight = fontSize + 4;
+  const xPos = x + indent;
+
+  page.drawText(label, { x: xPos, y, size: fontSize, font: fonts.bold, color: rgb(0, 0, 0) });
+  const valX = xPos + labelWidth;
+  const valMaxW = maxWidth - labelWidth - indent;
+  const lines = wrapText(fonts.regular, value || "—", fontSize, valMaxW);
+  if (lines.length === 0) lines.push("—");
   lines.forEach((line, i) => {
     page.drawText(line, {
-      x: x0 + 1,
-      y: baseY - i * lineHeight,
+      x: i === 0 ? valX : valX,
+      y: y - i * lineHeight,
       size: fontSize,
-      font,
+      font: fonts.regular,
       color: rgb(0, 0, 0),
     });
   });
+  return y - lines.length * lineHeight;
 }
 
-function drawBlock(page, font, text, x0, y_top, x1, y_bottom, fontSize = 8, pdfHeight = 792) {
-  if (!text) return;
-  const maxWidth = x1 - x0 - 4;
-  const lineHeight = fontSize + 2.5;
-  const startY = pdfHeight - y_top - fontSize;
-  const minY = pdfHeight - y_bottom;
+/** Draw a horizontal rule */
+function drawHR(page, x, y, width) {
+  page.drawLine({ start: { x, y }, end: { x: x + width, y }, thickness: 0.5, color: rgb(0.4, 0.4, 0.4) });
+}
 
-  const words = text.split(" ");
-  const lines = [];
-  let cur = "";
-  for (const word of words) {
-    const test = cur ? cur + " " + word : word;
-    if (font.widthOfTextAtSize(test, fontSize) > maxWidth && cur) {
-      lines.push(cur);
-      cur = word;
-    } else cur = test;
-  }
-  if (cur) lines.push(cur);
+/** Draw a section heading like "12. FIR Contents:" and return new Y */
+function drawSectionHeading(page, fonts, text, x, y, fontSize = 10) {
+  page.drawText(text, { x, y, size: fontSize, font: fonts.bold, color: rgb(0, 0, 0) });
+  return y - fontSize - 5;
+}
 
+/** Draw a block of wrapped text, return new Y */
+function drawWrappedBlock(page, font, text, x, y, maxWidth, fontSize = 9) {
+  const lineHeight = fontSize + 3.5;
+  const lines = wrapText(font, text, fontSize, maxWidth);
   lines.forEach((line, i) => {
-    const y = startY - i * lineHeight;
-    if (y < minY) return;
-    page.drawText(line, { x: x0 + 2, y, size: fontSize, font, color: rgb(0, 0, 0) });
+    page.drawText(line, { x, y: y - i * lineHeight, size: fontSize, font, color: rgb(0, 0, 0) });
   });
+  return y - lines.length * lineHeight;
 }
 
-export async function downloadAsPDF(report) {
-  const existingBytes = await fetch(FORM_PDF_URL).then((r) => r.arrayBuffer());
-  const pdfDoc = await PDFDocument.load(existingBytes);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const pages = pdfDoc.getPages();
-  const p1 = pages[0];
-  const p2 = pages[1];
-  const H = 792;
-  const d1 = (t, x0, yt, x1, yb, fs) => drawText(p1, font, t, x0, yt, x1, yb, fs, H);
-  const d2 = (t, x0, yt, x1, yb, fs) => drawText(p2, font, t, x0, yt, x1, yb, fs, H);
+/**
+ * Builds the FIR PDF from scratch and returns the raw bytes.
+ * Shared by downloadAsPDF and printFIR.
+ */
+async function buildFIRPdf(report) {
+  const v = (x) => x || "—";
+  const pdfDoc = await PDFDocument.create();
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fonts = { regular, bold };
 
-  // Item 1
-  d1(report.district,       97,  113, 168, 127, 7);
-  d1(report.policeStation,  220, 113, 289, 127, 7);
-  d1(report.year,           292, 113, 358, 127, 8);
-  d1(report.firNumber,      413, 113, 480, 127, 8);
-  d1(report.filingDate,     507, 113, 558, 127, 7);
+  const W = 595.28;   // A4 width
+  const H = 841.89;   // A4 height
+  const margin = 50;
+  const contentW = W - margin * 2;
 
-  // Item 2
-  d1(report.act1,      126, 141, 284, 155, 7);
-  d1(report.sections1, 340, 141, 553, 155, 8);
-  d1(report.act2,      126, 162, 284, 175, 8);
-  d1(report.sections2, 340, 162, 553, 175, 8);
-  d1(report.act3,      126, 182, 284, 196, 8);
-  d1(report.sections3, 340, 182, 553, 196, 8);
-  d1(report.otherActs, 223, 203, 553, 217, 8);
+  let page = pdfDoc.addPage([W, H]);
+  let y = H - margin;
 
-  // Item 3
-  d1([report.occurrenceDay, report.occurrenceDate].filter(Boolean).join("  "), 260, 238, 455, 251, 8);
-  d1(report.occurrenceTime,   491, 238, 556, 251, 8);
-  d1(report.infoReceivedDate, 266, 265, 388, 279, 8);
-  d1(report.infoReceivedTime, 417, 265, 556, 279, 8);
-  d1(report.gdEntryNo,        286, 293, 383, 306, 8);
-  d1(report.gdEntryTime,      413, 293, 557, 306, 8);
-
-  // Item 4
-  d1(report.infoType, 175, 320, 285, 334, 8);
-
-  // Item 5
-  d1(report.directionDistance, 354, 348, 438, 361, 8);
-  d1(report.beatNo,            486, 348, 556, 361, 8);
-  d1(report.placeAddress,      151, 376, 552, 389, 7);
-
-  // Item 6
-  d1(report.complainantName,    131, 472, 556, 486, 8);
-  d1(report.fatherHusbandName,  234, 494, 556, 507, 8);
-  d1(report.complainantDOB,     201, 515, 383, 528, 8);
-  d1(report.nationality,        459, 515, 558, 528, 8);
-  d1(report.passportNo,         164, 535, 255, 549, 8);
-  d1(report.passportIssueDate,  327, 535, 406, 549, 8);
-  d1(report.passportIssuePlace, 477, 535, 558, 549, 8);
-  d1(report.occupation,         161, 556, 556, 570, 8);
-  d1(report.complainantAddress, 145, 577, 556, 590, 7);
-
-  // Item 7 — accused (3 lines)
-  const accLines = wrapToLines(report.accusedDetails, 85, 3);
-  d1(accLines[0], 71, 632, 557, 645, 8);
-  d1(accLines[1], 71, 646, 557, 659, 8);
-  d1(accLines[2], 71, 660, 557, 673, 8);
-
-  // Item 8 — delay reason
-  d1(report.delayReason, 374, 673, 556, 687, 8);
-
-  // Item 9 — properties (short part on page 1)
-  d1(String(report.propertiesStolen || "").slice(0, 55), 451, 715, 556, 728, 8);
-
-  // ── PAGE 2 ──────────────────────────────────────────────────
-  d2(String(report.propertiesStolen || "").slice(55), 71, 44, 551, 58, 8);
-  d2(report.totalPropertyValue, 302, 100, 550, 113, 8);
-  d2(report.inquestReport,      267, 127, 551, 141, 8);
-
-  // Item 12 — FIR Contents (large block)
-  drawBlock(p2, font, report.firContents || "", 71, 185, 553, 368, 8, H);
-
-  // Save and trigger download
-  const pdfBytes = await pdfDoc.save();
-  triggerDownload(pdfBytes, "application/pdf", `FIR-${report.firNumber || "report"}.pdf`);
-}
-
-function wrapToLines(text, charsPerLine, maxLines) {
-  if (!text) return Array(maxLines).fill("");
-  const words = text.split(" ");
-  const lines = [];
-  let cur = "";
-  for (const word of words) {
-    if (lines.length >= maxLines) break;
-    if ((cur + " " + word).trim().length > charsPerLine && cur) {
-      lines.push(cur.trim()); cur = word;
-    } else cur = (cur + " " + word).trim();
+  /** Add a new page when space runs out, returns updated y */
+  function ensureSpace(needed) {
+    if (y - needed < margin) {
+      page = pdfDoc.addPage([W, H]);
+      y = H - margin;
+    }
   }
-  if (cur && lines.length < maxLines) lines.push(cur.trim());
-  while (lines.length < maxLines) lines.push("");
-  return lines;
+
+  // ── Title ──
+  const titleLines = [
+    { text: "FORM — IF1 (Integrated Form)", size: 8, font: regular },
+    { text: "FIRST INFORMATION REPORT", size: 14, font: bold },
+    { text: "(Under Section 154 Cr.P.C)", size: 9, font: regular },
+  ];
+  for (const tl of titleLines) {
+    const tw = tl.font.widthOfTextAtSize(tl.text, tl.size);
+    page.drawText(tl.text, { x: (W - tw) / 2, y, size: tl.size, font: tl.font, color: rgb(0, 0, 0) });
+    y -= tl.size + 6;
+  }
+  y -= 4;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 1 ──
+  const item1 = `Dist: ${v(report.district)}   P.S.: ${v(report.policeStation)}   Year: ${v(report.year)}   F.I.R. No.: ${v(report.firNumber)}   Date: ${v(report.filingDate)}`;
+  y = drawSectionHeading(page, fonts, "1.", margin, y, 10);
+  y = drawWrappedBlock(page, regular, item1, margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 2 — Acts ──
+  y = drawSectionHeading(page, fonts, "2. Acts & Sections:", margin, y, 10);
+  const acts = [
+    { label: "(i)", act: report.act1, sec: report.sections1 },
+    { label: "(ii)", act: report.act2, sec: report.sections2 },
+    { label: "(iii)", act: report.act3, sec: report.sections3 },
+  ];
+  for (const a of acts) {
+    if (a.act || a.sec) {
+      const line = `${a.label}  Act: ${v(a.act)}  —  Sections: ${v(a.sec)}`;
+      y = drawWrappedBlock(page, regular, line, margin + 18, y, contentW - 18, 9);
+    }
+  }
+  if (report.otherActs) {
+    y = drawWrappedBlock(page, regular, `(iv) Other Acts: ${report.otherActs}`, margin + 18, y, contentW - 18, 9);
+  }
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 3 — Occurrence ──
+  ensureSpace(80);
+  y = drawSectionHeading(page, fonts, "3. Occurrence of Offence:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, `(a) Day: ${v(report.occurrenceDay)}   Date: ${v(report.occurrenceDate)}   Time: ${v(report.occurrenceTime)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(b) Info received at P.S.: Date: ${v(report.infoReceivedDate)}   Time: ${v(report.infoReceivedTime)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(c) G.D. Entry No.: ${v(report.gdEntryNo)}   Time: ${v(report.gdEntryTime)}`, margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 4 ──
+  y = drawSectionHeading(page, fonts, "4. Type of Information:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, v(report.infoType), margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 5 — Place ──
+  ensureSpace(70);
+  y = drawSectionHeading(page, fonts, "5. Place of Occurrence:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, `(a) Direction & Distance from P.S.: ${v(report.directionDistance)}   Beat No.: ${v(report.beatNo)}`, margin + 18, y, contentW - 18, 9);
+  y = drawWrappedBlock(page, regular, `(b) Address: ${v(report.placeAddress)}`, margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 6 — Complainant ──
+  ensureSpace(120);
+  y = drawSectionHeading(page, fonts, "6. Complainant / Informant:", margin, y, 10);
+  const complainantFields = [
+    ["(a) Name:", report.complainantName],
+    ["(b) Father's/Husband's Name:", report.fatherHusbandName],
+    ["(c) Date/Year of Birth:", report.complainantDOB],
+    ["(d) Nationality:", report.nationality],
+    ["(e) Passport No.:", report.passportNo],
+    ["    Date of Issue:", report.passportIssueDate],
+    ["    Place of Issue:", report.passportIssuePlace],
+    ["(f) Occupation:", report.occupation],
+    ["(g) Address:", report.complainantAddress],
+  ];
+  for (const [label, val] of complainantFields) {
+    ensureSpace(20);
+    y = drawField(page, fonts, label, val, margin, y, { labelWidth: 170, maxWidth: contentW, indent: 18, fontSize: 9 });
+    y -= 2;
+  }
+  y -= 4;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 7 — Accused ──
+  ensureSpace(60);
+  y = drawSectionHeading(page, fonts, "7. Details of Known/Suspected/Unknown Accused:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, v(report.accusedDetails), margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 8 — Delay ──
+  ensureSpace(40);
+  y = drawSectionHeading(page, fonts, "8. Reasons for Delay in Reporting:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, v(report.delayReason), margin + 18, y, contentW - 18, 9);
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 9 & 10 — Properties ──
+  ensureSpace(60);
+  y = drawSectionHeading(page, fonts, "9. Particulars of Properties Stolen/Involved:", margin, y, 10);
+  y = drawWrappedBlock(page, regular, v(report.propertiesStolen), margin + 18, y, contentW - 18, 9);
+  y -= 4;
+  ensureSpace(20);
+  y = drawField(page, fonts, "10. Total Value:", report.totalPropertyValue, margin, y, { labelWidth: 120, maxWidth: contentW, fontSize: 9 });
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 11 ──
+  ensureSpace(20);
+  y = drawField(page, fonts, "11. Inquest Report / U.D. Case No.:", report.inquestReport, margin, y, { labelWidth: 220, maxWidth: contentW, fontSize: 9 });
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 12 — FIR Contents ──
+  ensureSpace(60);
+  y = drawSectionHeading(page, fonts, "12. F.I.R. Contents:", margin, y, 10);
+  const contentLines = wrapText(regular, v(report.firContents), 9, contentW - 18);
+  for (const line of contentLines) {
+    ensureSpace(16);
+    page.drawText(line, { x: margin + 18, y, size: 9, font: regular, color: rgb(0, 0, 0) });
+    y -= 12.5;
+  }
+  y -= 6;
+  drawHR(page, margin, y, contentW);
+  y -= 14;
+
+  // ── Item 13 — Action Taken ──
+  ensureSpace(100);
+  y = drawSectionHeading(page, fonts, "13. Action Taken:", margin, y, 10);
+  const actionText = "Since the above report reveals commission of offence(s) u/s as mentioned at Item No. 2, registered the case and took up the investigation. F.I.R. read over to the complainant / informant, admitted to be correctly recorded and copy given to the complainant / informant free of cost.";
+  y = drawWrappedBlock(page, regular, actionText, margin + 18, y, contentW - 18, 8);
+  y -= 16;
+
+  // Signatures
+  ensureSpace(80);
+  page.drawText("Signature of Officer-in-Charge", { x: margin, y, size: 8, font: bold, color: rgb(0, 0, 0) });
+  page.drawText("14. Signature / Thumb-impression of Complainant", { x: W / 2 + 10, y, size: 8, font: bold, color: rgb(0, 0, 0) });
+  y -= 10;
+  drawHR(page, margin, y, contentW / 2 - 20);
+  drawHR(page, W / 2 + 10, y, contentW / 2 - 10);
+  y -= 14;
+  page.drawText("Name: ___________________________", { x: margin, y, size: 8, font: regular, color: rgb(0, 0, 0) });
+  y -= 12;
+  page.drawText("Rank: _______________ No. __________", { x: margin, y, size: 8, font: regular, color: rgb(0, 0, 0) });
+  y -= 18;
+
+  ensureSpace(20);
+  page.drawText("15. Date & Time of Despatch to the Court: ____________________________", { x: margin, y, size: 8, font: regular, color: rgb(0, 0, 0) });
+
+  return await pdfDoc.save();
+}
+
+/**
+ * Generates the FIR PDF and triggers a file download.
+ */
+export async function downloadAsPDF(report) {
+  const pdfBytes = await buildFIRPdf(report);
+  triggerDownload(pdfBytes, "application/pdf", `FIR-${report.firNumber || "report"}.pdf`);
 }
 
 function triggerDownload(bytes, mime, filename) {
@@ -166,7 +288,41 @@ function triggerDownload(bytes, mime, filename) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-export function printFIR() { window.print(); }
+/**
+ * Generates the FIR PDF and opens the browser print dialog for the PDF itself
+ * (not the webpage). Uses a hidden iframe to render and print the PDF.
+ */
+export async function printFIR(report) {
+  const pdfBytes = await buildFIRPdf(report);
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+
+  // Remove any previous print iframe
+  const existing = document.getElementById("fir-print-iframe");
+  if (existing) existing.remove();
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "fir-print-iframe";
+  iframe.style.position = "fixed";
+  iframe.style.top = "-10000px";
+  iframe.style.left = "-10000px";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "none";
+  iframe.src = url;
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch {
+      // Fallback: open in a new tab and let user print from there
+      window.open(url, "_blank");
+    }
+  };
+
+  document.body.appendChild(iframe);
+}
 
 export function downloadAsTxt(report) {
   const v = (x) => x || "—";
