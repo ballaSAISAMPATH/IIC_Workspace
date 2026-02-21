@@ -15,16 +15,12 @@ def _calculate_relevance_score(query: str, docs: list) -> float:
     if not docs:
         return 0.0
     
-    # Check average content length and quality
     avg_length = sum(len(doc.page_content) for doc in docs) / len(docs)
     
-    # Minimum threshold: at least 100 chars of content per doc
     if avg_length < 100:
         return 0.0
     
-    # Simple relevance heuristic: longer, more detailed docs = higher relevance
-    # Scale from 0 to 1
-    relevance = min(avg_length / 500, 1.0)  # 500+ chars = perfect relevance
+    relevance = min(avg_length / 500, 1.0)  
     
     return relevance
 
@@ -63,15 +59,12 @@ def generate_controller(pdf_id: str, message: str, session_id: str):
         role = "Human" if isinstance(msg, HumanMessage) else "Assistant"
         history_text += f"{role}: {msg.content}\n"
 
-    # 🔥 RELEVANCE CHECK
     relevance_score = _calculate_relevance_score(message, docs)
     is_learning_query = _is_learning_related_query(message)
     
-    # Use RAG if: score > 0.4 AND query is learning-related
     has_relevant_context = relevance_score > 0.4 and is_learning_query
 
     if has_relevant_context:
-        # 1️⃣ RAG MODE: Use context from embeddings (bounded to PDF)
         prompt = f"""Context from learning resource:
 {context}
 
@@ -84,7 +77,6 @@ Based on the provided context, answer the user's question in a supportive and en
 """
         mode = "rag"
     elif is_learning_query:
-        # 2️⃣ FALLBACK MODE: General knowledge for learning-related queries
         prompt = f"""You are a supportive learning mentor helping with roadmaps and skill development.
 Be encouraging, constructive, and helpful.
 
@@ -97,7 +89,6 @@ Provide thoughtful guidance on learning and skill development. Be supportive and
 """
         mode = "general_knowledge"
     else:
-        # 3️⃣ OUT OF SCOPE: Query not related to learning
         prompt = f"""You are a helpful assistant but your specialty is learning roadmaps and skill development.
 
 Conversation:
@@ -121,7 +112,7 @@ Can I help you with your learning goals instead?"
         "answer": answer,
         "source_documents": len(docs),
         "relevance_score": round(relevance_score, 2),
-        "context_type": mode,  # "rag", "general_knowledge", or "out_of_scope"
+        "context_type": mode,  
         "session_id": session_id,
         "message_count": memory.get_message_count()
     }

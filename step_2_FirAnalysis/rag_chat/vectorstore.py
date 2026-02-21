@@ -5,9 +5,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 vectorstores = {}
-VECTORSTORE_DIR = "vectorstores_storage"  # Persistent storage directory
+VECTORSTORE_DIR = "vectorstores_storage" 
 
-# Create directory if it doesn't exist
 os.makedirs(VECTORSTORE_DIR, exist_ok=True)
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -19,7 +18,6 @@ def embed_text_for_pdf(text: str, pdf_id: str):
     vectorstore = FAISS.from_documents(docs, embeddings)
     vectorstores[pdf_id] = vectorstore
     
-    # 🔥 PERSIST TO DISK
     save_path = os.path.join(VECTORSTORE_DIR, pdf_id)
     vectorstore.save_local(save_path)
     
@@ -38,14 +36,11 @@ def load_vectorstore(pdf_id: str):
 
 def get_vectorstore(pdf_id: str):
     """Get vectorstore from memory, or load from disk"""
-    # Check memory first
     if pdf_id in vectorstores:
         return vectorstores[pdf_id]
     
-    # Try to load from disk
     vectorstore = load_vectorstore(pdf_id)
     if vectorstore:
         return vectorstore
     
-    # Not found
     return None

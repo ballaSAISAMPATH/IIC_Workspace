@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
-# ── Request ──────────────────────────────────────────────
 
 class FIRAnalysisRequest(BaseModel):
     fir_text: str = Field(
@@ -17,7 +16,6 @@ class FIRAnalysisRequest(BaseModel):
     )
 
 
-# ── Extracted FIR fields ─────────────────────────────────
 
 class FIRExtractedFields(BaseModel):
     fir_number: Optional[str] = None
@@ -44,7 +42,6 @@ class FIRExtractedFields(BaseModel):
     case_nature: Optional[str] = None
 
 
-# ── Mask preview — what gets sent to Gemini ──────────────
 
 class MaskEntry(BaseModel):
     token: str = Field(description="Token used in place of real value, e.g. [PERSON_A]")
@@ -79,7 +76,6 @@ class MaskPreviewResponse(BaseModel):
     )
 
 
-# ── Past cases ───────────────────────────────────────────
 
 class PastCaseCreate(BaseModel):
     title: str = Field(..., description="Case title or citation, e.g. 'State vs Raju 2019'")
@@ -114,7 +110,6 @@ class RelevantCasesResponse(BaseModel):
     cases: list[PastCaseResponse]
 
 
-# ── Gemini legal analysis ────────────────────────────────
 
 class LegalAnalysis(BaseModel):
     estimated_duration_months: dict = Field(
@@ -139,7 +134,6 @@ class LegalAnalysis(BaseModel):
     important_caveats: list[str]
 
 
-# ── Full response ─────────────────────────────────────────
 
 class FIRAnalysisResponse(BaseModel):
     extracted_fields: FIRExtractedFields

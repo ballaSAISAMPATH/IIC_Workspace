@@ -2,7 +2,6 @@
 Static constants and prompt templates.
 """
 
-# ── IPC section → short description ──────────────────────────────────────────
 IPC_DESCRIPTIONS: dict[str, str] = {
     "302": "Murder",
     "304": "Culpable homicide not amounting to murder",
@@ -25,7 +24,6 @@ IPC_DESCRIPTIONS: dict[str, str] = {
     "34": "Acts done by several persons in furtherance of common intention",
 }
 
-# ── IPC section → case nature (for auto-inference when model returns null) ────
 IPC_TO_CASE_NATURE: dict[str, str] = {
     "302": "Murder",
     "304": "Culpable Homicide",
@@ -53,7 +51,6 @@ IPC_TO_CASE_NATURE: dict[str, str] = {
     "34": "Joint Criminal Act",
 }
 
-# ── Entity types to extract ───────────────────────────────────────────────────
 SENSITIVE_ENTITY_TYPES = [
     "person",
     "witness",
@@ -65,7 +62,6 @@ SENSITIVE_ENTITY_TYPES = [
     "vehicle",
 ]
 
-# ── Average case durations (months) by nature ────────────────────────────────
 CASE_DURATION_BENCHMARKS: dict[str, dict] = {
     "Fraud / Cheating": {"min": 24, "typical": 60, "max": 120},
     "Theft / Robbery":  {"min": 12, "typical": 36, "max": 84},
@@ -77,7 +73,6 @@ CASE_DURATION_BENCHMARKS: dict[str, dict] = {
     "Default":          {"min": 18, "typical": 48, "max": 96},
 }
 
-# ── Prompt: FIR extraction (Ollama) ──────────────────────────────────────────
 EXTRACTION_SYSTEM_PROMPT = """You are a legal document parser specialising in Indian FIRs.
 Extract information accurately. If a field is not present, return null.
 Always respond in valid JSON only — no prose, no markdown fences."""
@@ -120,7 +115,6 @@ FIR TEXT:
 {fir_text}
 """
 
-# ── Prompt: Legal analysis (Gemini) ──────────────────────────────────────────
 LEGAL_ANALYSIS_PROMPT_TEMPLATE = """You are an expert Indian criminal lawyer and legal analyst with deep knowledge of Indian court judgements.
 You will be given details of an FIR (First Information Report) with personal details masked for privacy.
 Analyse the case objectively and respond ONLY with a valid JSON object matching the schema below.

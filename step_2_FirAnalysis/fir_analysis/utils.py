@@ -54,7 +54,6 @@ def infer_case_nature(
             if key in IPC_TO_CASE_NATURE:
                 return IPC_TO_CASE_NATURE[key]
 
-    # Check other acts for common keywords
     combined = " ".join(other_acts).lower()
     if "it act" in combined or "cyber" in combined:
         return "Cybercrime"
