@@ -7,11 +7,12 @@ from datetime import datetime
 import uuid
 import os
 import json
-
+import requests
 from encryption_template import encryption_prompt
 from FIR_generation_template import FIR_generation_prompt
-
 load_dotenv()
+LM_STUDIO_URL = os.getenv("LM_STUDIO_URL") + "/v1/chat/completions"
+
 
 model = ChatGroq(
     model="llama-3.3-70b-versatile",
@@ -120,15 +121,83 @@ llm_extraction = model.with_structured_output(LLMFIRExtraction)
 
 
 def encrypt_narration(state: dict):
-    msg = encryption_prompt.format_messages(
+    messages = encryption_prompt.format_messages(
         text=state["fir_text"]
     )
-    result = encrypt_llm.invoke(msg)
-    return {
-        "encrypted_narration": result.encrypted_narration,
-        "mapping": result.mapping
+
+    openai_messages = []
+
+    for m in messages:
+        if m.type == "human":
+            role = "user"
+            content = m.content
+        elif m.type == "ai":
+            role = "assistant"
+            content = m.content
+        else:
+            role = "system"
+            content = (
+                m.content
+                + "\n\n"
+                + "STRICT OUTPUT RULES:\n"
+                + "- You MUST return ONLY valid JSON.\n"
+                + "- No explanations.\n"
+                + "- No headings.\n"
+                + "- No markdown.\n"
+                + "- No code blocks.\n"
+                + "- The response MUST be a single JSON object.\n\n"
+                + "Required JSON schema:\n"
+                + "{\n"
+                + '  "encrypted_narration": string,\n'
+                + '  "mapping": { "<placeholder>": "<original_value>" }\n'
+                + "}\n\n"
+                + "If unsure, still output JSON in this exact format."
+            )
+
+        openai_messages.append({
+            "role": role,
+            "content": content
+        })
+
+    payload = {
+        "model": "llama-3.1-8b-instruct",
+        "temperature": 0,
+        "messages": openai_messages
     }
 
+    res = requests.post(
+        LM_STUDIO_URL,
+        json=payload,
+        timeout=90
+    )
+
+    if res.status_code != 200:
+        raise RuntimeError(f"LM Studio error {res.status_code}: {res.text}")
+
+    content = res.json()["choices"][0]["message"]["content"]
+
+    if not content or not content.strip():
+        raise RuntimeError("LM Studio returned empty response")
+
+    content = content.strip()
+
+    if content.startswith("```"):
+        content = content.strip("`")
+        content = content[content.find("{"): content.rfind("}") + 1]
+
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"LM Studio returned non-JSON output.\nRaw response:\n{content}"
+        ) from e
+
+    validated = NarrationEncrypted(**parsed)
+
+    return {
+        "encrypted_narration": validated.encrypted_narration,
+        "mapping": validated.mapping
+    }
 
 def llm_extract_fields(state: dict):
     msg = FIR_generation_prompt.format_messages(
