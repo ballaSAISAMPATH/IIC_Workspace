@@ -16,9 +16,7 @@ import google.generativeai as genai
 from core.config import settings
 
 
-# ──────────────────────────────────────────────
-# Ollama  —  OpenAI-compatible chat endpoint
-# ──────────────────────────────────────────────
+
 class OllamaClient:
     """
     Calls any OpenAI-compatible endpoint.
@@ -29,7 +27,6 @@ class OllamaClient:
     """
 
     def __init__(self):
-        # Strip trailing slash so URL joins work cleanly
         self.base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self.model = settings.OLLAMA_MODEL
         self.api_key = settings.OLLAMA_API_KEY
@@ -69,11 +66,9 @@ class OllamaClient:
         """Call generate() and parse the JSON response."""
         raw = await self.generate(prompt, system)
 
-        # Strip markdown code fences if model wraps output in ```json ... ```
         raw = raw.strip()
         if raw.startswith("```"):
             parts = raw.split("```")
-            # parts[1] is the block content (may start with 'json\n')
             raw = parts[1]
             if raw.startswith("json"):
                 raw = raw[4:]
@@ -87,9 +82,6 @@ class OllamaClient:
             ) from exc
 
 
-# ──────────────────────────────────────────────
-# Gemini  —  Google cloud LLM
-# ──────────────────────────────────────────────
 class GeminiClient:
     """
     Reads from .env:
@@ -102,7 +94,6 @@ class GeminiClient:
         self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
     async def generate(self, prompt: str) -> str:
-        # google-generativeai SDK is synchronous; run in thread pool
         import asyncio
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
@@ -135,8 +126,5 @@ class GeminiClient:
             ) from exc
 
 
-# ──────────────────────────────────────────────
-# Singletons  —  created once at import time
-# ──────────────────────────────────────────────
 ollama_client = OllamaClient()
 gemini_client = GeminiClient()

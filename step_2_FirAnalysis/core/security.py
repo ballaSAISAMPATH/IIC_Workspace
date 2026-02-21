@@ -21,7 +21,7 @@ class PIIMasker:
     def __init__(self):
         self._token_to_real: dict[str, str] = {}
         self._real_to_token: dict[str, str] = {}
-        self._token_to_type: dict[str, str] = {}   # token → entity_type
+        self._token_to_type: dict[str, str] = {}   
         self._counters: dict[str, int] = {}
 
     def mask(self, text: str, entities: dict[str, list[str]]) -> str:

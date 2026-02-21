@@ -29,7 +29,6 @@ from fir_analysis.pdf_extractor import extract_text_from_pdf, validate_pdf
 router = APIRouter()
 
 
-# ── Connectivity test ─────────────────────────────────────────────────────────
 
 @router.get(
     "/ping-ollama",
@@ -54,7 +53,6 @@ async def ping_ollama():
         raise OllamaUnavailableError(f"{type(exc).__name__}: {exc}")
 
 
-# ── Mask preview ──────────────────────────────────────────────────────────────
 
 @router.post(
     "/mask-preview",
@@ -75,7 +73,6 @@ async def mask_preview(
     return await service.mask_preview(req.fir_text)
 
 
-# ── Full pipeline ─────────────────────────────────────────────────────────────
 
 @router.post(
     "/analyse",
@@ -94,7 +91,6 @@ async def analyse_fir(
     return await service.analyse(req.fir_text)
 
 
-# ── Full pipeline — PDF upload ────────────────────────────────────────────────
 
 @router.post(
     "/analyse-pdf",
@@ -112,22 +108,18 @@ async def analyse_fir_pdf(
     service: FIRAnalysisService = Depends(get_fir_service),
 ) -> FIRAnalysisResponse:
 
-    # ── 1. Read uploaded bytes ────────────────────────────────────────────────
     file_bytes = await file.read()
 
-    # ── 2. Validate it's actually a PDF ──────────────────────────────────────
     try:
         validate_pdf(file_bytes)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    # ── 3. Extract text (digital → OCR fallback) ─────────────────────────────
     try:
         fir_text, method = extract_text_from_pdf(file_bytes)
     except RuntimeError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
-    # ── 4. Check we got enough text to work with ──────────────────────────────
     if len(fir_text.strip()) < 50:
         raise HTTPException(
             status_code=422,
@@ -138,19 +130,13 @@ async def analyse_fir_pdf(
             ),
         )
 
-    # ── 5. Size check ─────────────────────────────────────────────────────────
     _check_size(fir_text)
 
-    # ── 6. Run the same pipeline as /analyse ─────────────────────────────────
     response = await service.analyse(fir_text)
 
-    # ── 7. Attach extraction metadata to response headers (debug info) ────────
-    # The response body is identical to /analyse
-    # Check your terminal for the masking table debug print
     return response
 
 
-# ── Extraction only ───────────────────────────────────────────────────────────
 
 @router.post(
     "/extract-only",
@@ -167,7 +153,6 @@ async def extract_only(
     return extracted
 
 
-# ── IPC reference ─────────────────────────────────────────────────────────────
 
 @router.get(
     "/sections",
@@ -178,7 +163,6 @@ async def ipc_sections() -> dict[str, str]:
     return IPC_DESCRIPTIONS
 
 
-# ── Helper ────────────────────────────────────────────────────────────────────
 
 def _check_size(text: str) -> None:
     size = len(text.encode("utf-8"))

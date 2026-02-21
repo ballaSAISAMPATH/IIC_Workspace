@@ -16,7 +16,6 @@ from core.llm import OllamaClient, GeminiClient, ollama_client, gemini_client
 from fir_analysis.service import FIRAnalysisService
 
 
-# ── Individual client providers ───────────────────────────────────────────────
 
 def get_ollama_client() -> OllamaClient:
     """Returns the shared Ollama client singleton."""
@@ -28,7 +27,6 @@ def get_gemini_client() -> GeminiClient:
     return gemini_client
 
 
-# ── Service provider (composes the two clients) ───────────────────────────────
 
 def get_fir_service(
     ollama: OllamaClient = Depends(get_ollama_client),

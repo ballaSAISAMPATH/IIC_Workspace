@@ -24,7 +24,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# If digital PDF has fewer than this many chars → treat as scanned
 MIN_CHARS_FOR_DIGITAL = 100
 
 
@@ -37,7 +36,6 @@ def extract_text_from_pdf(file_bytes: bytes) -> tuple[str, str]:
     text        : extracted plain text
     method_used : "digital" | "ocr"  (for debug/logging)
     """
-    # ── Try digital extraction first ─────────────────────────────────────────
     try:
         import pdfplumber
         text = _extract_digital(file_bytes)
@@ -51,7 +49,6 @@ def extract_text_from_pdf(file_bytes: bytes) -> tuple[str, str]:
     except Exception as exc:
         logger.warning(f"pdfplumber failed: {exc} — trying OCR")
 
-    # ── Fall back to OCR ──────────────────────────────────────────────────────
     try:
         text = _extract_ocr(file_bytes)
         logger.info(f"PDF extracted via OCR ({len(text)} chars)")
@@ -85,7 +82,6 @@ def _extract_ocr(file_bytes: bytes) -> str:
     from pdf2image import convert_from_bytes
     from PIL import Image
 
-    # Convert each PDF page to a PIL image at 300 DPI for good OCR accuracy
     images: list[Image.Image] = convert_from_bytes(
         file_bytes,
         dpi=300,
@@ -94,8 +90,6 @@ def _extract_ocr(file_bytes: bytes) -> str:
 
     text_parts = []
     for i, image in enumerate(images):
-        # lang="eng" works for English FIRs
-        # For Hindi/Telugu add: lang="eng+hin" or "eng+tel"
         page_text = pytesseract.image_to_string(image, lang="eng")
         if page_text.strip():
             text_parts.append(f"--- Page {i + 1} ---\n{page_text}")
@@ -115,7 +109,7 @@ def validate_pdf(file_bytes: bytes) -> None:
             "Uploaded file does not appear to be a valid PDF "
             "(missing PDF header). Please upload a .pdf file."
         )
-    if len(file_bytes) > 20 * 1024 * 1024:  # 20 MB hard limit
+    if len(file_bytes) > 20 * 1024 * 1024:
         raise ValueError(
             f"PDF is too large ({len(file_bytes) // (1024*1024)} MB). "
             f"Maximum allowed size is 20 MB."

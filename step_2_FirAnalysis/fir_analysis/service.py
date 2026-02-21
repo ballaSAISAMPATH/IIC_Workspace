@@ -57,7 +57,6 @@ class FIRAnalysisService:
         self.ollama = ollama
         self.gemini = gemini
 
-    # ── Public: full pipeline ─────────────────────────────────────────────────
 
     async def analyse(self, fir_text: str) -> FIRAnalysisResponse:
         extracted_raw = await self._extract_fields(fir_text)
@@ -69,18 +68,15 @@ class FIRAnalysisService:
             legal_analysis=legal_analysis,
         )
 
-    # ── Public: mask preview only (no Gemini call) ────────────────────────────
 
     async def mask_preview(self, fir_text: str) -> MaskPreviewResponse:
         extracted_raw = await self._extract_fields(fir_text)
         extracted, masked_payload, masker = self._build_and_mask(extracted_raw)
 
-        # Build the masking table
         masking_table = [
             MaskEntry(**entry) for entry in masker.get_mask_entries()
         ]
 
-        # PII fields that exist in extracted but are NOT sent to Gemini
         pii_fields_hidden = {}
         if extracted.victim_name:
             pii_fields_hidden["victim_name"] = extracted.victim_name
@@ -107,7 +103,6 @@ class FIRAnalysisService:
             pii_fields_hidden=pii_fields_hidden,
         )
 
-    # ── Step 1: Ollama extraction ─────────────────────────────────────────────
 
     async def _extract_fields(self, fir_text: str) -> dict[str, Any]:
         prompt = EXTRACTION_PROMPT_TEMPLATE.format(fir_text=fir_text)
@@ -131,7 +126,6 @@ class FIRAnalysisService:
             raise ExtractionError(str(exc))
         return data
 
-    # ── Step 2: Mask + build schemas ─────────────────────────────────────────
 
     def _build_and_mask(
         self, raw: dict[str, Any]
@@ -192,7 +186,6 @@ class FIRAnalysisService:
             extracted.incident_description, entities_for_masking
         )
 
-        # ── DEBUG — prints exactly what was masked in your terminal ──
         print("\n" + "="*60)
         print("🔒 MASKING TABLE (never sent to cloud)")
         print("="*60)
@@ -206,7 +199,6 @@ class FIRAnalysisService:
         print(f"  Original : {extracted.incident_description}")
         print(f"  Masked   : {masked_description}")
         print("="*60 + "\n")
-        # ── END DEBUG ────────────────────────────────────────────────
 
         district_label = " / ".join(
             filter(None, [extracted.police_station, extracted.district])
@@ -223,7 +215,6 @@ class FIRAnalysisService:
 
         return extracted, masked_payload, masker
 
-    # ── Step 3: Gemini legal analysis ────────────────────────────────────────
 
     async def _legal_analysis(self, payload: MaskedFIRPayload) -> LegalAnalysis:
 
@@ -237,13 +228,11 @@ class FIRAnalysisService:
             masked_description=payload.masked_description,
         )
 
-        # ── DEBUG — prints the exact prompt sent to Gemini in your terminal ──
         print("\n" + "="*60)
         print("📤 PROMPT SENT TO GEMINI")
         print("="*60)
         print(prompt)
         print("="*60 + "\n")
-        # ── END DEBUG ─────────────────────────────────────────────────────────
 
         try:
             data = await self.gemini.generate_json(prompt)
